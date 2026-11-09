@@ -1,6 +1,6 @@
 local resolver = require("scripts.recipe_resolver")
 local production = require("scripts.production_manager")
-local common = require("gui.common")
+local tasks = require("scripts.task_manager")
 local M = {}
 
 local function set_draft(pane, value)
@@ -13,6 +13,11 @@ function M.read(pane)
   local value = pane.tags.production
   if not value then return false end
   return {type = value.type, name = value.name, recipe = value.recipe, quantity = value.quantity}
+end
+
+function M.refresh_info(pane)
+  local row = pane.todo_production.todo_recipe_row
+  row.todo_recipe_info.visible = row.visible and tasks.has_children(pane.tags.task_id)
 end
 
 function M.refresh(pane, player)
@@ -42,34 +47,74 @@ function M.refresh(pane, player)
     labels[#labels + 1] = {"todo.production-missing-recipe", value.recipe}
     selected = #names
   end
-  fields.todo_recipe.items = labels
-  fields.todo_recipe.selected_index = selected
-  fields.todo_recipe.visible = value ~= false and value ~= nil and value.type ~= "recipe" and #names > 2
-  fields.todo_clear_target.visible = value ~= false and value ~= nil
+  local recipe_row = fields.todo_recipe_row
+  recipe_row.todo_recipe.items = labels
+  recipe_row.todo_recipe.selected_index = selected
+  recipe_row.visible = value ~= false and value ~= nil and value.type ~= "recipe" and #names > 2
+  M.refresh_info(pane)
   fields.tags = {recipe_names = names}
   local draft, err = M.read(pane)
   local plan
   if draft then plan, err = production.plan{production = draft} end
-  fields.todo_preview.caption = plan and {"todo.production-preview", plan.crafts, #plan.ingredients}
-    or (err and {"todo.error-" .. err} or "")
+  fields.todo_preview.visible = plan ~= nil
+  fields.todo_preview.caption = plan and {pane.tags.ingredients_open and "todo.production-hide-ingredients"
+    or "todo.production-view-ingredients", #plan.ingredients} or ""
+  fields.todo_plan_error.caption = err and {"todo.error-" .. err} or ""
+  local list = fields.todo_ingredients
+  list.clear()
+  list.visible = plan ~= nil and pane.tags.ingredients_open == true
+  if plan and list.visible then
+    for _, ingredient in ipairs(plan.ingredients) do
+      local row = list.add{type = "flow", name = "ingredient_" .. ingredient.index}
+      row.style.vertical_align = "center"
+      local icon = row.add{type = "sprite", sprite = ingredient.type .. "/" .. ingredient.name}
+      icon.style.size = {24, 24}
+      local prototype = resolver.prototype(ingredient.type, ingredient.name)
+      local label = row.add{type = "label", caption = {"", prototype and prototype.localised_name or ingredient.name,
+        " × ", string.format("%.6g", ingredient.amount)}}
+      label.style.single_line = false
+      label.style.maximal_width = 300
+      local details = {""}
+      if ingredient.temperature or ingredient.minimum_temperature or ingredient.maximum_temperature then
+        details[#details + 1] = {"todo.production-temperature", ingredient.temperature or ingredient.minimum_temperature or "?",
+          ingredient.temperature or ingredient.maximum_temperature or "?"}
+      end
+      if ingredient.quality_min or ingredient.quality_max or ingredient.quality_change then
+        if #details > 1 then details[#details + 1] = "\n" end
+        details[#details + 1] = {"todo.production-quality", tostring(ingredient.quality_min or "normal"),
+          tostring(ingredient.quality_max or "*"), ingredient.quality_change or 0}
+      end
+      if #details > 1 then label.tooltip = details end
+    end
+  end
 end
 
 function M.render(pane, value, player)
   local fields = pane.add{type = "flow", name = "todo_production", direction = "vertical"}
-  local recipes = fields.add{type = "drop-down", name = "todo_recipe", items = {{"todo.production-choose-recipe"}}, selected_index = 1,
+  local recipe_row = fields.add{type = "flow", name = "todo_recipe_row", direction = "horizontal"}
+  recipe_row.style.vertical_align = "center"
+  local recipes = recipe_row.add{type = "drop-down", name = "todo_recipe", items = {{"todo.production-choose-recipe"}}, selected_index = 1,
     tags = {todo_action = "production_recipe"}}
   recipes.style.width = 350
+  recipe_row.add{type = "label", name = "todo_recipe_info", caption = "(i)", tooltip = {"todo.production-children-unchanged"}}
   local label = fields.add{type = "label", name = "todo_target_name"}
   label.style.single_line = false
   label.style.maximal_width = 310
-  local preview = fields.add{type = "label", name = "todo_preview"}
-  preview.style.single_line = false
-  preview.style.maximal_width = 310
-  local note = fields.add{type = "label", caption = {"todo.production-children-unchanged"}}
-  note.style.single_line = false
-  note.style.maximal_width = 310
-  common.button(fields, "clear_target", {"todo.target-clear"})
+  fields.add{type = "button", name = "todo_preview", tags = {todo_action = "preview_ingredients"}}
+  local list = fields.add{type = "scroll-pane", name = "todo_ingredients", direction = "vertical"}
+  list.style.width = 350
+  list.style.maximal_height = 180
+  local error_label = fields.add{type = "label", name = "todo_plan_error", caption = ""}
+  error_label.style.single_line = false
+  error_label.style.maximal_width = 350
   set_draft(pane, value)
+  M.refresh(pane, player)
+end
+
+function M.toggle_ingredients(pane, player)
+  local tags = pane.tags
+  tags.ingredients_open = not tags.ingredients_open
+  pane.tags = tags
   M.refresh(pane, player)
 end
 
@@ -141,7 +186,7 @@ end
 function M.recipe_changed(pane, player)
   local fields, value = pane.todo_production, pane.tags.production
   if not value or value.type == "recipe" then return end
-  local name = fields.tags.recipe_names[fields.todo_recipe.selected_index]
+  local name = fields.tags.recipe_names[fields.todo_recipe_row.todo_recipe.selected_index]
   value.recipe = name ~= "" and name or nil
   set_draft(pane, value)
   M.refresh(pane, player)

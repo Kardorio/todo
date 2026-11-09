@@ -27,7 +27,7 @@ function M.open(player, id)
   title.style.maximal_width = 510
   local plan, err = production.plan(task)
   if plan then
-    frame.add{type = "label", caption = {"todo.production-preview", plan.crafts, #plan.ingredients}}
+    frame.add{type = "label", caption = {"todo.production-ingredients", #plan.ingredients}}
     local note = frame.add{type = "label", caption = {"todo.production-theoretical"}}
     note.style.single_line = false
     note.style.maximal_width = 510

@@ -7,7 +7,7 @@ local common = require("gui.common")
 local locations = require("scripts.location_manager")
 local selector = require("gui.production_selector")
 local M = {}
-local gui_revision = 9
+local gui_revision = 10
 
 local function open_list(player)
   selector.close(player)
@@ -111,7 +111,7 @@ function M.clicked(event)
   if action == "open" then open_list(player)
   elseif action == "close" then window.close(player)
   elseif action == "close_editor" then open_list(player)
-  elseif action == "clear_target" then editor.set_target(player)
+  elseif action == "preview_ingredients" then editor.production_changed(player, element)
   elseif action == "toggle_panel" then panel.toggle(player)
   elseif action == "new" then open_editor(player)
   elseif action == "edit" then

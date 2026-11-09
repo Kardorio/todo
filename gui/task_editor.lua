@@ -124,7 +124,10 @@ end
 
 function M.refresh_location(player)
   local pane = holder(player)
-  if pane and pane.todo_location then pane.todo_location.caption = locations.describe(pane.tags) end
+  if pane and pane.todo_location then
+    pane.todo_location.caption = locations.describe(pane.tags)
+    production_fields.refresh_info(pane)
+  end
 end
 
 function M.request_delete(player, visible)
@@ -200,13 +203,9 @@ function M.production_changed(player, element)
     local ok, err = production_fields.target_changed(pane, player, element)
     if not ok then M.error(player, err) end
   elseif action == "production_recipe" then production_fields.recipe_changed(pane, player)
+  elseif action == "preview_ingredients" then production_fields.toggle_ingredients(pane, player)
   elseif action == "production_title" then production_fields.title_changed(pane)
   end
-end
-
-function M.set_target(player, kind, name, label)
-  local pane = holder(player)
-  if pane then production_fields.set_target(pane, player, kind, name, label) end
 end
 
 function M.translated(event)

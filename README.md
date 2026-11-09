@@ -119,8 +119,8 @@ avec ses catégories d'icônes et sa recherche habituelle pour les objets, fluid
 et recettes. Les autres types de signaux sont refusés sans modifier l'objectif.
 Le choix remplit automatiquement un titre vide et actualise un titre précédemment
 généré ; un titre personnalisé est conservé. La cible et la recette ne sont
-enregistrées qu'avec le reste du formulaire. Le bouton de retrait de la cible
-supprime cette association sans supprimer la tâche ni ses sous-tâches.
+enregistrées qu'avec le reste du formulaire. Un clic droit sur la case retire
+l'association sans supprimer la tâche ni ses sous-tâches.
 
 Le choix de recette apparaît directement sous le titre et le composant. Lorsqu'une
 seule recette existe, elle est sélectionnée automatiquement et le menu est masqué.
@@ -128,6 +128,9 @@ Lorsqu'il existe plusieurs recettes, choisir explicitement une alternative.
 Les recettes verrouillées sont signalées et peuvent servir à planifier
 un objectif futur ; les recettes cachées ne figurent pas dans cette liste.
 Pour une recette choisie directement, celle-ci est déjà explicite.
+Une infobulle « (i) » accompagne le menu uniquement si la tâche possède déjà des
+sous-tâches : changer la recette ne les modifie pas. Le bouton **Voir les ingrédients**
+déplie les composants dans l'éditeur et conserve le formulaire en cours de saisie.
 
 L'éditeur ne propose pas de quantité cible. Un nouvel objectif part d'une
 fabrication de la recette choisie. Les quantités des composants et celles des
