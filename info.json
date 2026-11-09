@@ -1,0 +1,9 @@
+{
+  "name": "todo-manager",
+  "version": "0.1.0",
+  "title": "Todo Manager",
+  "author": "Kardorio",
+  "factorio_version": "2.1",
+  "dependencies": ["base >= 2.1.0"],
+  "description": "Gestionnaire de tâches partagé avec positions enregistrées dans la sauvegarde."
+}

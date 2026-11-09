@@ -1,0 +1,18 @@
+local runtime = require("scripts.runtime")
+
+script.on_init(runtime.initialize)
+script.on_load(runtime.loaded)
+script.on_configuration_changed(runtime.initialize)
+script.on_event(defines.events.on_tick, runtime.first_tick)
+script.on_event(defines.events.on_player_created, runtime.player_created)
+script.on_event(defines.events.on_player_joined_game, runtime.player_created)
+script.on_event(defines.events.on_player_removed, runtime.player_removed)
+script.on_event(defines.events.on_gui_click, runtime.clicked)
+script.on_event(defines.events.on_gui_checked_state_changed, runtime.checked)
+script.on_event(defines.events.on_gui_closed, runtime.closed)
+script.on_event(defines.events.on_gui_location_changed, runtime.moved)
+script.on_event(defines.events.on_player_display_resolution_changed, runtime.resized)
+script.on_event(defines.events.on_player_display_scale_changed, runtime.resized)
+script.on_event(defines.events.on_surface_deleted, runtime.refresh)
+
+commands.add_command("todo", {"todo.command-help"}, runtime.command)

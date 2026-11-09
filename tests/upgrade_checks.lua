@@ -1,0 +1,13 @@
+local store = require("scripts.storage")
+
+script.on_nth_tick(1, function()
+  local state = store.get()
+  assert(state.schema_version == 2, "Legacy schema was not migrated on same-version replacement")
+  assert(state.next_id == 2 and state.tasks[1].title == "Legacy saved task")
+  assert(state.tasks[1].description == "Legacy notes")
+  assert(state.tasks[1].position.x == 5 and state.tasks[1].position.y == -8)
+  assert(state.tasks[1].order == 1 and state.tasks[1].priority == 0 and state.tasks[1].revision == 1)
+  assert(state.players[1].pinned and state.players[1].collapsed and state.players[1].panel_visible)
+  log("TODO_UPGRADE_OK")
+  script.on_nth_tick(1, nil)
+end)
