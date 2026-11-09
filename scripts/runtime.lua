@@ -7,7 +7,7 @@ local common = require("gui.common")
 local locations = require("scripts.location_manager")
 local selector = require("gui.production_selector")
 local M = {}
-local gui_revision = 8
+local gui_revision = 9
 
 local function open_list(player)
   selector.close(player)

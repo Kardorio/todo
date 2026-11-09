@@ -122,18 +122,16 @@ généré ; un titre personnalisé est conservé. La cible et la recette ne sont
 enregistrées qu'avec le reste du formulaire. Le bouton de retrait de la cible
 supprime cette association sans supprimer la tâche ni ses sous-tâches.
 
-Pour un objet ou un fluide, choisir explicitement sa recette dans la liste des
-alternatives. Aucune recette n'est choisie automatiquement, même si une seule est
-proposée. Les recettes verrouillées sont signalées et peuvent servir à planifier
+Le choix de recette apparaît directement sous le titre et le composant. Lorsqu'une
+seule recette existe, elle est sélectionnée automatiquement et le menu est masqué.
+Lorsqu'il existe plusieurs recettes, choisir explicitement une alternative.
+Les recettes verrouillées sont signalées et peuvent servir à planifier
 un objectif futur ; les recettes cachées ne figurent pas dans cette liste.
 Pour une recette choisie directement, celle-ci est déjà explicite.
 
-La quantité est facultative :
-
-- Vide : une fabrication de la recette choisie.
-- Objet : nombre entier d'unités souhaitées.
-- Fluide : quantité souhaitée, éventuellement décimale.
-- Recette : nombre entier de fabrications.
+L'éditeur ne propose pas de quantité cible. Un nouvel objectif part d'une
+fabrication de la recette choisie. Les quantités des composants et celles des
+objectifs déjà enregistrés sont conservées lors d'une modification.
 
 Les besoins sont calculés par fabrication entière. Le rendement moyen officiel
 est utilisé pour les résultats aléatoires et les résultats multiples ; l'estimation

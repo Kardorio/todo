@@ -50,36 +50,29 @@ return function(player)
   pane().todo_title_row.todo_title.text = "Objectif de production"
   assert(pane().todo_title_row.todo_title.parent == pane().todo_title_row.todo_choose_target.parent)
   assert(not pane().todo_production.todo_target_pickers)
+  assert(not pane().todo_production.todo_quantity and not pane().todo_production.todo_quantity_label)
+  assert(pane().children[3] == pane().todo_production)
+  select_target("item", "todo-test-ore")
+  assert(not pane().tags.production.recipe and not pane().todo_production.todo_recipe.visible)
+  select_target("item", "todo-test-empty")
+  assert(pane().tags.production.recipe == "todo-test-no-input" and not pane().todo_production.todo_recipe.visible)
   select_target("item", "todo-test-goal")
   assert(pane().todo_title_row.todo_title.text == "Objectif de production")
   assert(pane().tags.production.name == "todo-test-goal" and not pane().tags.production.recipe)
   assert(pane().todo_production.todo_recipe.selected_index == 1)
-  pane().todo_production.todo_quantity.text = "5"
-  changed(pane().todo_production.todo_quantity)
+  assert(pane().todo_production.todo_recipe.visible)
   recipe("todo-test-alpha")
   local id = store.get().next_id
-  local before_invalid = {}
-  for existing_id, existing_task in pairs(store.get().tasks) do
-    before_invalid[existing_id] = {order = existing_task.order, revision = existing_task.revision}
-  end
-  pane().todo_production.todo_quantity.text = "0"
-  click(find(pane(), "todo_save"))
-  assert(store.get().next_id == id and not tasks.get(id))
-  assert(pane().todo_error.caption[1] == "todo.error-invalid_quantity")
-  for existing_id, snapshot in pairs(before_invalid) do
-    assert(tasks.get(existing_id).order == snapshot.order and tasks.get(existing_id).revision == snapshot.revision)
-  end
-  pane().todo_production.todo_quantity.text = "5"
   click(find(pane(), "todo_save"))
   local task = assert(tasks.get(id))
-  assert(task.production.quantity == 5 and task.production.recipe == "todo-test-alpha")
+  assert(not task.production.quantity and task.production.recipe == "todo-test-alpha")
   assert(#tasks.children(id) == 0)
   local marker = list()["task_" .. id].todo_decompose
   assert(marker.visible and marker.sprite == "item/todo-test-goal" and helpers.is_valid_sprite_path(marker.sprite))
   click(marker)
   assert(chooser() and not player.gui.screen.todo_manager_window and not chooser().todo_production_add.enabled)
   local plan = assert(production.plan(task))
-  assert(plan.crafts == 3)
+  assert(plan.crafts == 1)
   local part_index, ore_index
   for _, ingredient in ipairs(plan.ingredients) do
     if ingredient.name == "todo-test-part" then part_index = ingredient.index end
@@ -91,7 +84,7 @@ return function(player)
   assert(chooser().todo_production_add.enabled)
   click(chooser().todo_production_add)
   local children = tasks.children(id)
-  assert(#children == 1 and children[1].production.name == "todo-test-part" and children[1].production.quantity == 6)
+  assert(#children == 1 and children[1].production.name == "todo-test-part" and children[1].production.quantity == 2)
   assert(not children[1].production.recipe and not tasks.has_children(children[1].id))
   click(list()["task_" .. id].todo_decompose)
   assert(not chooser().todo_ingredients["ingredient_" .. part_index].todo_select.enabled)
@@ -99,11 +92,12 @@ return function(player)
   runtime.closed{player_index = player.index, element = chooser()}
   local child = children[1]
   click(list()["task_" .. child.id].todo_edit)
+  assert(pane().todo_production.todo_recipe.visible and not pane().tags.production.recipe)
   recipe("todo-test-part")
   click(find(pane(), "todo_save"))
   click(list()["task_" .. child.id].todo_decompose)
   local child_plan = assert(production.plan(child))
-  assert(#child_plan.ingredients == 1 and child_plan.ingredients[1].amount == 12)
+  assert(child.production.quantity == 2 and #child_plan.ingredients == 1 and child_plan.ingredients[1].amount == 4)
   selected = chooser().todo_ingredients.ingredient_1.todo_select
   selected.state = true
   runtime.checked{player_index = player.index, element = selected}
@@ -133,7 +127,6 @@ return function(player)
   runtime.refresh()
   click(list()["task_" .. id].todo_edit)
   recipe("todo-test-beta")
-  pane().todo_production.todo_quantity.text = "2"
   click(find(pane(), "todo_save"))
   assert(task.production.recipe == "todo-test-beta" and #tasks.children(id) == 1)
   assert(child.production.quantity == 6)
@@ -148,10 +141,10 @@ return function(player)
   click(list()["task_" .. id].todo_edit)
   select_target("fluid", "todo-test-fluid")
   assert(pane().tags.production.type == "fluid")
-  pane().todo_production.todo_quantity.text = "2,5"
+  assert(pane().todo_production.todo_recipe.visible and not pane().tags.production.recipe)
   recipe("todo-test-fluid")
   click(find(pane(), "todo_save"))
-  assert(task.production.type == "fluid" and task.production.quantity == 2.5)
+  assert(task.production.type == "fluid" and not task.production.quantity)
   click(list()["task_" .. id].todo_edit)
   click(pane().todo_production.todo_clear_target)
   click(find(pane(), "todo_save"))
@@ -160,14 +153,10 @@ return function(player)
   pane().todo_title_row.todo_title.text = "Objectif recette"
   select_target("recipe", "todo-test-alpha")
   assert(pane().tags.production.recipe == "todo-test-alpha" and not pane().todo_production.todo_recipe.visible)
-  pane().todo_production.todo_quantity.text = "invalid"
-  click(find(pane(), "todo_save"))
-  assert(pane().todo_error.caption[1] == "todo.error-invalid_quantity")
-  pane().todo_production.todo_quantity.text = "2"
   local recipe_id = store.get().next_id
   click(find(pane(), "todo_save"))
   assert(tasks.get(recipe_id).production.type == "recipe")
-  assert(production.plan(tasks.get(recipe_id)).crafts == 2)
+  assert(production.plan(tasks.get(recipe_id)).crafts == 1)
   click(find(player.gui.screen.todo_manager_window, "todo_new"))
   pane().todo_description.text = "Brouillon conservé"
   select_target("item", "todo-test-goal")

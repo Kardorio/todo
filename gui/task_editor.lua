@@ -47,6 +47,8 @@ function M.open(player, id, parent_id)
   local task = id and tasks.get(id)
   local prefs = store.player(player.index)
   prefs.selected_id = task and task.id or nil
+  pane.tags = {task_id = task and task.id or 0, revision = task and task.revision or 0,
+    position = task and task.position or false, surface_index = task and task.surface_index or false}
   pane.add{type = "label", caption = {"todo.field-title"}}
   local title_row = pane.add{type = "flow", name = "todo_title_row", direction = "horizontal"}
   local title = title_row.add{type = "textfield", name = "todo_title", text = task and task.title or "",
@@ -54,6 +56,7 @@ function M.open(player, id, parent_id)
   title.style.width = 310
   title_row.add{type = "choose-elem-button", name = "todo_choose_target", elem_type = "signal",
     tooltip = {"todo.target-choose-help"}, tags = {todo_action = "production_target"}}
+  production_fields.render(pane, task and task.production or false, player)
   local description = field(pane, "todo.description", {type = "text-box", name = "todo_description",
     text = task and task.description or ""})
   description.word_wrap = true
@@ -81,10 +84,9 @@ function M.open(player, id, parent_id)
   local parent = field(pane, "todo.parent", {type = "drop-down", name = "todo_parent",
     items = parents, selected_index = parent_index})
   parent.style.width = 310
-  pane.tags = {task_id = task and task.id or 0, revision = task and task.revision or 0,
-    parent_ids = ids, position = task and task.position or false,
-    surface_index = task and task.surface_index or false}
-  production_fields.render(pane, task and task.production or false, player)
+  local tags = pane.tags
+  tags.parent_ids = ids
+  pane.tags = tags
   if task then
     pane.add{type = "label", caption = {"todo.author", task.creator_name, task.created_at}}
   end
@@ -198,7 +200,6 @@ function M.production_changed(player, element)
     local ok, err = production_fields.target_changed(pane, player, element)
     if not ok then M.error(player, err) end
   elseif action == "production_recipe" then production_fields.recipe_changed(pane, player)
-  elseif action == "production_quantity" then production_fields.refresh(pane, player)
   elseif action == "production_title" then production_fields.title_changed(pane)
   end
 end
