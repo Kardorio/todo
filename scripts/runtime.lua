@@ -6,19 +6,38 @@ local editor = require("gui.task_editor")
 local common = require("gui.common")
 local locations = require("scripts.location_manager")
 local selector = require("gui.production_selector")
+local picker = require("gui.target_picker")
 local M = {}
-local gui_revision = 6
+local gui_revision = 7
 
 local function open_list(player)
+  picker.close(player)
   selector.close(player)
   editor.close(player)
   window.open(player)
 end
 
 local function open_editor(player, id, parent_id)
+  picker.close(player)
   selector.close(player)
   window.close(player)
   editor.open(player, id, parent_id)
+end
+
+local function close_picker(player)
+  common.with_close_guard(player, function()
+    picker.close(player)
+    local frame = player.gui.screen.todo_manager_editor
+    if frame then frame.visible = true player.opened = frame
+    else window.open(player) end
+  end)
+end
+
+local function open_picker(player)
+  local frame = player.gui.screen.todo_manager_editor
+  if not frame then return end
+  common.with_close_guard(player, function() picker.open(player) end)
+  frame.visible = false
 end
 
 local function render(player)
@@ -44,6 +63,7 @@ function M.initialize()
     end
     editor.close(player)
     selector.close(player)
+    picker.close(player)
     local old_panel = player.gui.screen.todo_manager_panel
     if old_panel then old_panel.destroy() end
     panel.render(player)
@@ -108,6 +128,13 @@ function M.clicked(event)
   if action == "open" then open_list(player)
   elseif action == "close" then window.close(player)
   elseif action == "close_editor" then open_list(player)
+  elseif action == "choose_target" then open_picker(player)
+  elseif action == "close_target_picker" then close_picker(player)
+  elseif action == "target_prev" or action == "target_next" then picker.changed(player, element)
+  elseif action == "target_pick" then
+    local kind, name, label = picker.choice(player, element)
+    if kind then editor.set_target(player, kind, name, label) close_picker(player) end
+  elseif action == "clear_target" then editor.set_target(player)
   elseif action == "toggle_panel" then panel.toggle(player)
   elseif action == "new" then open_editor(player)
   elseif action == "edit" then
@@ -180,12 +207,30 @@ function M.closed(event)
   elseif selector.is_window(event.element) then
     local player = game.get_player(event.player_index)
     if player then open_list(player) end
+  elseif picker.is_window(event.element) then
+    local player = game.get_player(event.player_index)
+    if player then close_picker(player) end
   end
 end
 
 function M.production_changed(event)
   local player, element = event_context(event)
-  if player then editor.production_changed(player, element) end
+  if player then
+    if element.tags.todo_action == "target_search" or element.tags.todo_action == "target_filter" then picker.changed(player, element)
+    else editor.production_changed(player, element) end
+  end
+end
+
+function M.translated(event)
+  M.ensure_ready()
+  picker.translated(event)
+  editor.translated(event)
+end
+
+function M.picker_tick()
+  M.ensure_ready()
+  picker.tick()
+  for _, player in pairs(game.connected_players) do editor.retry_translation(player) end
 end
 
 function M.moved(event)

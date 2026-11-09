@@ -5,6 +5,15 @@ function M.is_preserving(index)
   return preserving[index] == true
 end
 
+function M.with_close_guard(player, action)
+  local previous = preserving[player.index]
+  preserving[player.index] = true
+  local ok, result, err = pcall(action)
+  preserving[player.index] = previous
+  if not ok then error(result) end
+  return result, err
+end
+
 function M.preserve_window(player, action)
   local frame
   for _, name in ipairs({"todo_manager_window", "todo_manager_editor", "todo_manager_production"}) do
@@ -56,6 +65,7 @@ function M.owns(element)
     if element.name == "todo_manager_window" or element.name == "todo_manager_panel"
       or element.name == "todo_manager_editor"
       or element.name == "todo_manager_production"
+      or element.name == "todo_manager_target_picker"
       or element.name == "todo_manager_open" or element.name == "todo_manager_toggle_panel" then
       return true
     end

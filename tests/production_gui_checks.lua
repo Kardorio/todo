@@ -2,6 +2,8 @@ local runtime = require("scripts.runtime")
 local tasks = require("scripts.task_manager")
 local store = require("scripts.storage")
 local production = require("scripts.production_manager")
+local target_picker = require("gui.target_picker")
+local editor = require("gui.task_editor")
 
 local function find(root, name)
   local stack = {root}
@@ -23,6 +25,27 @@ return function(player)
   local function list() return player.gui.screen.todo_manager_window.todo_tree end
   local function pane() return player.gui.screen.todo_manager_editor.todo_editor end
   local function chooser() return player.gui.screen.todo_manager_production end
+  local function select_target(kind, name)
+    local original = player.gui.screen.todo_manager_editor
+    click(pane().todo_title_row.todo_choose_target)
+    local target_frame = player.gui.screen.todo_manager_target_picker
+    assert(target_frame and original.valid and not original.visible and player.opened == target_frame)
+    target_frame.todo_target_controls.todo_target_search.text = name
+    changed(target_frame.todo_target_controls.todo_target_search)
+    for _, row in ipairs(target_frame.todo_target_results.children) do
+      local button = row.todo_target_pick
+      if button then
+        local candidate_kind, candidate_name = target_picker.choice(player, button)
+        if candidate_kind == kind and candidate_name == name then
+          click(button)
+          assert(original.valid and original.visible and player.opened == original)
+          assert(not player.gui.screen.todo_manager_target_picker)
+          return
+        end
+      end
+    end
+    error("Target missing: " .. kind .. "/" .. name)
+  end
   local function recipe(name)
     local fields = pane().todo_production
     for index, candidate in ipairs(fields.tags.recipe_names) do
@@ -36,10 +59,11 @@ return function(player)
   end
   runtime.command{player_index = player.index}
   click(find(player.gui.screen.todo_manager_window, "todo_new"))
-  pane().todo_title.text = "Objectif de production"
-  local picker = pane().todo_production.todo_target_pickers.todo_target_item
-  picker.elem_value = "todo-test-goal"
-  changed(picker)
+  pane().todo_title_row.todo_title.text = "Objectif de production"
+  assert(pane().todo_title_row.todo_title.parent == pane().todo_title_row.todo_choose_target.parent)
+  assert(not pane().todo_production.todo_target_pickers)
+  select_target("item", "todo-test-goal")
+  assert(pane().todo_title_row.todo_title.text == "Objectif de production")
   assert(pane().tags.production.name == "todo-test-goal" and not pane().tags.production.recipe)
   assert(pane().todo_production.todo_recipe.selected_index == 1)
   pane().todo_production.todo_quantity.text = "5"
@@ -134,25 +158,19 @@ return function(player)
   assert(chooser().todo_production_error.caption[1] == "todo.error-conflict")
   runtime.closed{player_index = player.index, element = chooser()}
   click(list()["task_" .. id].todo_edit)
-  picker = pane().todo_production.todo_target_pickers.todo_target_fluid
-  picker.elem_value = "todo-test-fluid"
-  changed(picker)
-  assert(not pane().todo_production.todo_target_pickers.todo_target_item.elem_value)
+  select_target("fluid", "todo-test-fluid")
+  assert(pane().tags.production.type == "fluid")
   pane().todo_production.todo_quantity.text = "2,5"
   recipe("todo-test-fluid")
   click(find(pane(), "todo_save"))
   assert(task.production.type == "fluid" and task.production.quantity == 2.5)
   click(list()["task_" .. id].todo_edit)
-  picker = pane().todo_production.todo_target_pickers.todo_target_fluid
-  picker.elem_value = nil
-  changed(picker)
+  click(pane().todo_production.todo_clear_target)
   click(find(pane(), "todo_save"))
   assert(not task.production and not list()["task_" .. id].todo_decompose.visible)
   click(find(player.gui.screen.todo_manager_window, "todo_new"))
-  pane().todo_title.text = "Objectif recette"
-  picker = pane().todo_production.todo_target_pickers.todo_target_recipe
-  picker.elem_value = "todo-test-alpha"
-  changed(picker)
+  pane().todo_title_row.todo_title.text = "Objectif recette"
+  select_target("recipe", "todo-test-alpha")
   assert(pane().tags.production.recipe == "todo-test-alpha" and not pane().todo_production.todo_recipe.visible)
   pane().todo_production.todo_quantity.text = "invalid"
   click(find(pane(), "todo_save"))
@@ -162,5 +180,57 @@ return function(player)
   click(find(pane(), "todo_save"))
   assert(tasks.get(recipe_id).production.type == "recipe")
   assert(production.plan(tasks.get(recipe_id)).crafts == 2)
+  click(find(player.gui.screen.todo_manager_window, "todo_new"))
+  pane().todo_description.text = "Brouillon conservé"
+  click(pane().todo_title_row.todo_choose_target)
+  local target_frame = player.gui.screen.todo_manager_target_picker
+  assert(#target_frame.todo_target_results.children <= 40)
+  local picker_state = store.player(player.index).target_picker
+  click(target_frame.todo_target_navigation.todo_target_next)
+  assert(picker_state.page == 2)
+  target_picker.tick()
+  local translated_id, translated_index = next(picker_state.pending)
+  assert(translated_id and translated_index)
+  local translated_entry = picker_state.entries[translated_index]
+  runtime.translated{player_index = player.index, id = translated_id, translated = true, result = "Élément de démonstration"}
+  target_frame.todo_target_controls.todo_target_search.text = "element de demonstration"
+  changed(target_frame.todo_target_controls.todo_target_search)
+  assert(#target_frame.todo_target_results.children == 1 and picker_state.page == 1)
+  local result_button = target_frame.todo_target_results.children[1].todo_target_pick
+  local result_kind, result_name, result_label = target_picker.choice(player, result_button)
+  assert(result_kind == translated_entry.kind and result_name == translated_entry.name and result_label == "Élément de démonstration")
+  target_frame.todo_target_controls.todo_target_filter.selected_index = translated_entry.kind == "fluid" and 2 or 3
+  changed(target_frame.todo_target_controls.todo_target_filter)
+  assert(not target_frame.todo_target_results.children[1].todo_target_pick)
+  runtime.closed{player_index = player.index, element = target_frame}
+  assert(player.gui.screen.todo_manager_editor.visible and pane().todo_description.text == "Brouillon conservé")
+  select_target("item", "todo-test-goal")
+  local pending = pane().tags.title_translation
+  assert(pending and pane().todo_title_row.todo_title.text == "todo-test-goal")
+  click(find(pane(), "todo_save"))
+  assert(pane().todo_error.caption[1] == "todo.error-title_translation_pending")
+  local expired_id = pending.id
+  local title_tags = pane().tags
+  title_tags.title_translation.tick = game.tick - 180
+  pane().tags = title_tags
+  editor.retry_translation(player)
+  pending = pane().tags.title_translation
+  assert(pending.id ~= expired_id)
+  runtime.translated{player_index = player.index, id = expired_id, translated = true, result = "Réponse expirée"}
+  assert(pane().todo_title_row.todo_title.text == "todo-test-goal")
+  runtime.translated{player_index = player.index, id = pending.id, translated = true, result = "Nom localisé de l'objet"}
+  assert(pane().todo_title_row.todo_title.text == "Nom localisé de l'objet")
+  select_target("fluid", "todo-test-fluid")
+  local fluid_pending = pane().tags.title_translation
+  runtime.translated{player_index = player.index, id = pending.id, translated = true, result = "Ancienne réponse"}
+  assert(pane().todo_title_row.todo_title.text == "todo-test-fluid")
+  runtime.translated{player_index = player.index, id = fluid_pending.id, translated = true, result = "Fluide traduit"}
+  assert(pane().todo_title_row.todo_title.text == "Fluide traduit")
+  pane().todo_title_row.todo_title.text = "Mon titre personnel"
+  changed(pane().todo_title_row.todo_title)
+  select_target("recipe", "todo-test-alpha")
+  assert(pane().todo_title_row.todo_title.text == "Mon titre personnel" and not pane().tags.title_translation)
+  click(find(pane(), "todo_save"))
+  assert(not player.gui.screen.todo_manager_editor)
   log("TODO_PRODUCTION_GUI_OK")
 end

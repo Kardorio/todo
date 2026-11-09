@@ -3,7 +3,7 @@ local store = require("scripts.storage")
 script.on_nth_tick(1, function()
   local state = store.get()
   local task, prefs = state.tasks[1], state.players[1]
-  assert(state.schema_version == 3 and state.gui_revision == 6 and state.next_id == 2)
+  assert(state.schema_version == 3 and state.gui_revision == 7 and state.next_id == 2)
   assert(task.title == "V1 saved task" and task.description == "V1 notes")
   assert(task.status == "IN_PROGRESS" and task.priority == 3 and task.revision == 9 and task.order == 7)
   assert(task.position.x == 12 and task.position.y == -8 and not task.production)

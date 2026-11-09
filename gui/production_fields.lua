@@ -1,5 +1,6 @@
 local resolver = require("scripts.recipe_resolver")
 local production = require("scripts.production_manager")
+local common = require("gui.common")
 local M = {}
 
 local function set_draft(pane, value)
@@ -21,6 +22,8 @@ function M.refresh(pane, player)
   local fields = pane.todo_production
   local value = pane.tags.production
   local target = value and resolver.prototype(value.type, value.name)
+  fields.visible = value ~= false and value ~= nil
+  pane.todo_title_row.todo_choose_target.caption = {value and "todo.target-change" or "todo.target-choose"}
   fields.todo_target_name.caption = target and target.localised_name or
     {value and "todo.production-missing-target" or "todo.production-none"}
   fields.todo_quantity_label.caption = {value and value.type == "recipe" and "todo.production-crafts" or "todo.production-quantity"}
@@ -41,6 +44,7 @@ function M.refresh(pane, player)
   fields.todo_recipe.items = labels
   fields.todo_recipe.selected_index = selected
   fields.todo_recipe.visible = value ~= false and value ~= nil and value.type ~= "recipe"
+  fields.todo_clear_target.visible = value ~= false and value ~= nil
   fields.tags = {recipe_names = names}
   local draft, err = M.read(pane)
   local plan
@@ -53,12 +57,7 @@ function M.render(pane, value, player)
   local fields = pane.add{type = "flow", name = "todo_production", direction = "vertical"}
   fields.add{type = "line"}
   fields.add{type = "label", caption = {"todo.production"}, style = "heading_2_label"}
-  local pickers = fields.add{type = "flow", name = "todo_target_pickers"}
-  for _, kind in ipairs({"item", "fluid", "recipe"}) do
-    local picker = pickers.add{type = "choose-elem-button", name = "todo_target_" .. kind,
-      elem_type = kind, tooltip = {"todo.production-pick-" .. kind}, tags = {todo_action = "production_target", kind = kind}}
-    if value and value.type == kind and resolver.prototype(kind, value.name) then picker.elem_value = value.name end
-  end
+  common.button(fields, "clear_target", {"todo.target-clear"})
   local label = fields.add{type = "label", name = "todo_target_name"}
   label.style.single_line = false
   label.style.maximal_width = 310
@@ -79,14 +78,57 @@ function M.render(pane, value, player)
   M.refresh(pane, player)
 end
 
-function M.target_changed(pane, player, element)
-  local name, kind = element.elem_value, element.tags.kind
+function M.set_target(pane, player, kind, name, label)
   local value = name and {type = kind, name = name, recipe = kind == "recipe" and name or nil} or false
   set_draft(pane, value)
-  for _, other in ipairs({"item", "fluid", "recipe"}) do
-    if other ~= kind then pane.todo_production.todo_target_pickers["todo_target_" .. other].elem_value = nil end
+  local tags, title = pane.tags, pane.todo_title_row.todo_title
+  tags.title_translation = false
+  if value and (title.text:match("^%s*$") or title.text == tags.auto_title) then
+    title.text = label and label ~= "" and label or name
+    tags.auto_title = title.text
+    if not label or label == "" then
+      local target = resolver.prototype(kind, name)
+      if target then
+        tags.title_translation = {id = player.request_translation(target.localised_name),
+          expected = title.text, kind = kind, name = name, tick = game.tick}
+      end
+    end
   end
+  pane.tags = tags
   M.refresh(pane, player)
+end
+
+function M.retry_translation(pane, player)
+  local tags = pane.tags
+  local pending = tags.title_translation
+  if not pending or game.tick - pending.tick < 180 then return end
+  local target = resolver.prototype(pending.kind, pending.name)
+  if target and pane.todo_title_row.todo_title.text == pending.expected then
+    pending.id, pending.tick = player.request_translation(target.localised_name), game.tick
+  else tags.title_translation = false end
+  pane.tags = tags
+end
+
+function M.title_changed(pane)
+  local tags = pane.tags
+  if pane.todo_title_row.todo_title.text ~= tags.auto_title then
+    tags.auto_title, tags.title_translation = false, false
+    pane.tags = tags
+  end
+end
+
+function M.translated(pane, event)
+  local tags = pane.tags
+  local pending = tags.title_translation
+  if not pending or pending.id ~= event.id then return end
+  local target, title = tags.production, pane.todo_title_row.todo_title
+  if target and target.type == pending.kind and target.name == pending.name
+    and title.text == pending.expected and tags.auto_title == pending.expected then
+    title.text = event.translated and event.result ~= "" and event.result or pending.expected
+    tags.auto_title = title.text
+  end
+  tags.title_translation = false
+  pane.tags = tags
 end
 
 function M.recipe_changed(pane, player)

@@ -114,10 +114,12 @@ Aucun contrôle de couverture ni pré-commit n'est configuré.
 
 ## Lot 2 : objectifs de production
 
-Dans l'éditeur, la section **Objectif de production** propose les sélecteurs natifs
-pour un objet, un fluide ou une recette. La cible et la recette ne sont enregistrées
-qu'avec le reste du formulaire. Effacer la cible avec son sélecteur retire cette
-association sans supprimer la tâche ni ses sous-tâches.
+Dans l'éditeur, le bouton à côté du titre ouvre un sélecteur commun aux objets,
+fluides et recettes, avec recherche par nom localisé et filtre facultatif par type.
+Le choix remplit automatiquement un titre vide et actualise un titre précédemment
+généré ; un titre personnalisé est conservé. La cible et la recette ne sont
+enregistrées qu'avec le reste du formulaire. Le bouton de retrait de la cible
+supprime cette association sans supprimer la tâche ni ses sous-tâches.
 
 Pour un objet ou un fluide, choisir explicitement sa recette dans la liste des
 alternatives. Aucune recette n'est choisie automatiquement, même si une seule est

@@ -23,7 +23,7 @@ end
 function M.resize(player)
   local pane = holder(player)
   if not pane then return end
-  pane.style.width = 340
+  pane.style.width = 420
   pane.style.maximal_height = math.max(180, math.min(570, player.display_resolution.height / player.display_scale - 150))
 end
 
@@ -47,8 +47,12 @@ function M.open(player, id, parent_id)
   local task = id and tasks.get(id)
   local prefs = store.player(player.index)
   prefs.selected_id = task and task.id or nil
-  local title = field(pane, "todo.field-title", {type = "textfield", name = "todo_title", text = task and task.title or ""})
-  title.style.width = 310
+  pane.add{type = "label", caption = {"todo.field-title"}}
+  local title_row = pane.add{type = "flow", name = "todo_title_row", direction = "horizontal"}
+  local title = title_row.add{type = "textfield", name = "todo_title", text = task and task.title or "",
+    tags = {todo_action = "production_title"}}
+  title.style.width = 270
+  common.button(title_row, "choose_target", {"todo.target-choose"}, nil, {"todo.target-choose-help"})
   local description = field(pane, "todo.description", {type = "text-box", name = "todo_description",
     text = task and task.description or ""})
   description.word_wrap = true
@@ -106,6 +110,7 @@ function M.open(player, id, parent_id)
   error_label.style.single_line = false
   error_label.style.maximal_width = 310
   M.resize(player)
+  frame.visible = true
   player.opened = frame
 end
 
@@ -160,11 +165,15 @@ function M.save(player)
   local pane = holder(player)
   if not pane then return end
   local tags = pane.tags
+  if tags.title_translation and pane.todo_title_row.todo_title.text == tags.title_translation.expected then
+    M.error(player, "title_translation_pending")
+    return
+  end
   local target, target_error = production_fields.read(pane)
   if target == nil then M.error(player, target_error) return end
   local parent_id = tags.parent_ids[pane.todo_parent.selected_index]
   local changes = {
-    title = pane.todo_title.text, description = pane.todo_description.text,
+    title = pane.todo_title_row.todo_title.text, description = pane.todo_description.text,
     status = statuses[pane.todo_status.selected_index], priority = pane.todo_priority.selected_index - 1,
     parent_id = parent_id ~= 0 and parent_id or false,
     position = tags.position, surface_index = tags.surface_index, production = target
@@ -184,10 +193,26 @@ function M.production_changed(player, element)
   local pane = holder(player)
   if not pane then return end
   local action = element.tags.todo_action
-  if action == "production_target" then production_fields.target_changed(pane, player, element)
-  elseif action == "production_recipe" then production_fields.recipe_changed(pane, player)
+  if action == "production_recipe" then production_fields.recipe_changed(pane, player)
   elseif action == "production_quantity" then production_fields.refresh(pane, player)
+  elseif action == "production_title" then production_fields.title_changed(pane)
   end
+end
+
+function M.set_target(player, kind, name, label)
+  local pane = holder(player)
+  if pane then production_fields.set_target(pane, player, kind, name, label) end
+end
+
+function M.translated(event)
+  local player = game.get_player(event.player_index)
+  local pane = player and holder(player)
+  if pane then production_fields.translated(pane, event) end
+end
+
+function M.retry_translation(player)
+  local pane = holder(player)
+  if pane then production_fields.retry_translation(pane, player) end
 end
 
 function M.reload(player)

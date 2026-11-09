@@ -50,6 +50,7 @@ local function run_checks()
     on_gui_checked_state_changed = runtime.checked, on_gui_closed = runtime.closed,
     on_gui_elem_changed = runtime.production_changed, on_gui_selection_state_changed = runtime.production_changed,
     on_gui_text_changed = runtime.production_changed,
+    on_string_translated = runtime.translated,
     on_gui_location_changed = runtime.moved, on_player_display_resolution_changed = runtime.resized,
     on_player_display_scale_changed = runtime.resized, on_surface_deleted = runtime.refresh
   }
@@ -144,12 +145,12 @@ local function run_checks()
   runtime.command{player_index = player.index, parameter = " "}
   assert(store.get().next_id == before + 1)
   click(find(frame(), "todo_new"))
-  assert(not frame() and edit_frame() and pane().todo_title)
+  assert(not frame() and edit_frame() and pane().todo_title_row.todo_title)
   click(find(pane(), "todo_save"))
   assert(not frame() and edit_frame())
   assert(store.get().next_id == before + 1)
   assert(pane().todo_error.caption[1] == "todo.error-title_required")
-  pane().todo_title.text = "Créée dans la fenêtre"
+  pane().todo_title_row.todo_title.text = "Créée dans la fenêtre"
   pane().todo_description.text = "Prévoir une gare"
   pane().todo_status.selected_index = 2
   pane().todo_priority.selected_index = 4
@@ -159,7 +160,7 @@ local function run_checks()
   assert(ui_task.description == "Prévoir une gare" and ui_task.status == "IN_PROGRESS")
   assert(ui_task.priority == 3 and not ui_task.position)
   click(tree()["task_" .. ui_task.id].todo_new_child)
-  pane().todo_title.text = "Enfant"
+  pane().todo_title_row.todo_title.text = "Enfant"
   click(find(pane(), "todo_save"))
   local child = assert(tasks.get(before + 2))
   assert(child.parent_id == ui_task.id)
@@ -295,7 +296,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 6)
+    assert(store.get().gui_revision == 7)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)
