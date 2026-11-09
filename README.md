@@ -1,8 +1,9 @@
 # Factorio Todo Manager
 
 Gestionnaire de tâches indépendant pour **Factorio 2.1**, sans dépendance à un
-service externe ni à un mod de contenu. La V1 gère les tâches ; l'association aux
-recettes et la Factoriopedia appartiennent aux versions suivantes.
+service externe ni à un mod de contenu. La V1 gère les tâches ; le lot 2 ajoute
+les objectifs de production et leur décomposition progressive. La Factoriopedia
+appartient au lot 3.
 
 ## Utilisation
 
@@ -72,9 +73,10 @@ Le paramètre `--mods-dir /chemin` permet de choisir un autre dossier de mods.
 ## Données et mises à jour
 
 Les données sont dans `storage.todo_manager`, à l'intérieur de la sauvegarde,
-sans fichier externe. Le schéma 2 utilise `parent_id` et `order` sur les tâches,
-et des préférences indexées par joueur. La migration depuis le premier prototype
-(schéma 1) initialise les nouveaux champs sans perdre les titres ni les positions.
+sans fichier externe. Le schéma 3 conserve `parent_id` et `order` sur les tâches,
+les objectifs de production facultatifs et des préférences indexées par joueur.
+La migration depuis les schémas 1 et 2 initialise les nouveaux champs sans perdre
+les titres ni les positions.
 Elle est appliquée à l'initialisation, au changement de configuration ou avant la
 première utilisation après chargement d'un ancien schéma, y compris lors du
 remplacement du prototype à version identique. Aucune écriture n'est effectuée
@@ -109,3 +111,56 @@ Le rendu visuel et le confort d'utilisation restent à vérifier avec un client
 graphique autonome. Une session avec plusieurs clients et le transfert d'une
 sauvegarde sur un autre ordinateur ne sont pas couverts par le test moteur.
 Aucun contrôle de couverture ni pré-commit n'est configuré.
+
+## Lot 2 : objectifs de production
+
+Dans l'éditeur, la section **Objectif de production** propose les sélecteurs natifs
+pour un objet, un fluide ou une recette. La cible et la recette ne sont enregistrées
+qu'avec le reste du formulaire. Effacer la cible avec son sélecteur retire cette
+association sans supprimer la tâche ni ses sous-tâches.
+
+Pour un objet ou un fluide, choisir explicitement sa recette dans la liste des
+alternatives. Aucune recette n'est choisie automatiquement, même si une seule est
+proposée. Les recettes verrouillées sont signalées et peuvent servir à planifier
+un objectif futur ; les recettes cachées ne figurent pas dans cette liste.
+Pour une recette choisie directement, celle-ci est déjà explicite.
+
+La quantité est facultative :
+
+- Vide : une fabrication de la recette choisie.
+- Objet : nombre entier d'unités souhaitées.
+- Fluide : quantité souhaitée, éventuellement décimale.
+- Recette : nombre entier de fabrications.
+
+Les besoins sont calculés par fabrication entière. Le rendement moyen officiel
+est utilisé pour les résultats aléatoires et les résultats multiples ; l'estimation
+n'est pas une garantie de production. Aucun bonus de productivité ou de qualité,
+choix de machine, vitesse de production ou équilibrage des coproduits n'est simulé.
+Les ingrédients sont des besoins bruts, y compris lorsqu'un catalyseur revient
+parmi les résultats. Les contraintes de température et de qualité des ingrédients
+sont affichées dans la décomposition ; le joueur choisit sa chaîne et ses machines.
+
+Une icône de la cible apparaît dans la liste et le panneau compact, dans une
+colonne fixe. Elle ouvre **Décomposer les composants**. Cocher uniquement les
+composants à transformer en sous-tâches, puis choisir **Ajouter les composants
+sélectionnés**. Les autres restent simplement des ingrédients, sans création de
+tâche. Chaque nouvelle sous-tâche conserve sa quantité, mais aucune recette ne lui
+est attribuée automatiquement. Elle peut ensuite être développée de la même façon.
+
+Un composant déjà ajouté depuis cette recette n'est pas dupliqué. Ses modifications
+manuelles sont conservées. Changer la recette ou la quantité du parent ne modifie
+ni ne supprime les enfants déjà créés ; ils doivent être ajustés manuellement.
+
+Les associations sont conservées dans la sauvegarde, au schéma 3. Le passage des
+schémas 1 et 2 au schéma 3 conserve les anciennes tâches, positions, statuts,
+épingles et préférences. Si un mod retiré emporte un prototype ou une recette,
+l'association reste enregistrée, la tâche reste éditable et la décomposition
+signale que le prototype n'est plus disponible.
+
+Les essais chargent aussi un mod de test fournissant ses propres objets, fluides
+et recettes alternatives, probabilistes et avec contraintes de température. Ils
+vérifient la sélection, les quantités, les doublons, les conflits, le développement
+progressif et le passage d'une véritable sauvegarde V1 au nouveau schéma.
+Ces prototypes de test ne sont pas inclus dans l'archive distribuable.
+
+La Factoriopedia reste prévue pour le lot 3.

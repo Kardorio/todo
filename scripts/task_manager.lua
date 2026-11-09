@@ -1,7 +1,9 @@
 local store = require("scripts.storage")
 local location = require("scripts.location_manager")
+local resolver = require("scripts.recipe_resolver")
 local M = {}
 local statuses = {TODO = true, IN_PROGRESS = true, DONE = true, IGNORED = true}
+local apply_changes
 
 local function sorted(tasks)
   table.sort(tasks, function(a, b)
@@ -56,7 +58,7 @@ function M.can_parent(id, parent_id)
   return true
 end
 
-function M.create(title, player, tick, parent_id, capture_location)
+function M.create(title, player, tick, parent_id, capture_location, initial_changes)
   title = trim(title)
   if title == "" then return nil, "title_required" end
   if parent_id == false then parent_id = nil end
@@ -71,14 +73,17 @@ function M.create(title, player, tick, parent_id, capture_location)
     local captured = location.capture(player)
     task.position, task.surface_index = captured.position, captured.surface_index
   end
+  if initial_changes then
+    local updated, err = apply_changes(task, initial_changes)
+    if not updated then return nil, err end
+  end
   state.tasks[task.id] = task
   state.next_id = task.id + 1
   return task
 end
 
-function M.update(id, changes, expected_revision)
-  local task = M.get(id)
-  if not task then return nil, "missing" end
+apply_changes = function(task, changes, expected_revision)
+  local id = task.id
   if expected_revision and task.revision ~= expected_revision then return nil, "conflict" end
   local title = changes.title ~= nil and trim(changes.title) or task.title
   if title == "" then return nil, "title_required" end
@@ -105,6 +110,15 @@ function M.update(id, changes, expected_revision)
       end
     end
   end
+  local production = task.production
+  if changes.production == false then
+    production = nil
+  elseif changes.production ~= nil then
+    local err
+    production, err = resolver.validate(changes.production, task.production)
+    if not production then return nil, err end
+  end
+  task.production = production
   task.title = title
   if changes.description ~= nil then task.description = changes.description end
   if changes.status ~= nil then task.status = changes.status end
@@ -117,6 +131,12 @@ function M.update(id, changes, expected_revision)
   task.surface_index = surface_index
   task.revision = task.revision + 1
   return task
+end
+
+function M.update(id, changes, expected_revision)
+  local task = M.get(id)
+  if not task then return nil, "missing" end
+  return apply_changes(task, changes, expected_revision)
 end
 
 function M.children(parent_id)

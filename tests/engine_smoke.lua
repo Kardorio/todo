@@ -7,6 +7,8 @@ local model_checks = require("model_checks")
 local window = require("gui.main_window")
 local tree_renderer = require("gui.task_tree")
 local common = require("gui.common")
+local production_checks = require("production_checks")
+local production_gui_checks = require("production_gui_checks")
 local loaded = false
 
 local function find(root, name)
@@ -24,6 +26,9 @@ script.on_init(function()
   local player = {index = 1, name = "Fixture", position = {x = 12, y = 34}, surface = game.surfaces[1]}
   local root = assert(tasks.create("Persistence fixture", player, game.tick))
   local child = assert(tasks.create("Saved child", player, game.tick, root.id, false))
+  assert(tasks.update(root.id, {production = {type = "item", name = "todo-test-goal", recipe = "todo-test-alpha", quantity = 5}}))
+  assert(tasks.update(child.id, {production = {type = "item", name = "todo-test-part", recipe = "todo-test-part", quantity = 6}}))
+  child.source_recipe, child.source_ingredient = "todo-test-alpha", 1
   assert(tasks.update(child.id, {status = "DONE", priority = 3, description = "Saved notes"}))
   local prefs = store.player(1)
   prefs.pinned[root.id] = true
@@ -43,6 +48,8 @@ local function run_checks()
     on_player_created = runtime.player_created, on_player_joined_game = runtime.player_created,
     on_player_removed = runtime.player_removed, on_gui_click = runtime.clicked,
     on_gui_checked_state_changed = runtime.checked, on_gui_closed = runtime.closed,
+    on_gui_elem_changed = runtime.production_changed, on_gui_selection_state_changed = runtime.production_changed,
+    on_gui_text_changed = runtime.production_changed,
     on_gui_location_changed = runtime.moved, on_player_display_resolution_changed = runtime.resized,
     on_player_display_scale_changed = runtime.resized, on_surface_deleted = runtime.refresh
   }
@@ -51,11 +58,13 @@ local function run_checks()
   end
   assert(commands.commands.todo, "The /todo command must be registered")
   assert(loaded, "V1-AC2: checks must run after a real save/load")
-  assert(store.get().schema_version == 2 and store.get().next_id == 3)
+  assert(store.get().schema_version == 3 and store.get().next_id == 3)
   assert(tasks.get(1).title == "Persistence fixture")
   assert(tasks.get(1).position.x == 12 and tasks.get(1).position.y == 34)
   assert(tasks.get(2).parent_id == 1 and tasks.get(2).status == "DONE")
   assert(tasks.get(2).description == "Saved notes" and tasks.get(2).priority == 3)
+  assert(tasks.get(1).production.name == "todo-test-goal" and tasks.get(1).production.quantity == 5)
+  assert(tasks.get(2).production.recipe == "todo-test-part" and tasks.get(2).source_ingredient == 1)
   assert(not tasks.get(2).position)
   local prefs = store.player(1)
   assert(prefs.pinned[1] and prefs.collapsed[1] and not prefs.panel_visible)
@@ -64,6 +73,7 @@ local function run_checks()
   local player = assert(game.get_player(1))
   player.set_controller{type = defines.controllers.god}
   model_checks(player)
+  production_checks(player)
   runtime.player_created{player_index = player.index}
   local function click(element)
     assert(element and element.valid)
@@ -285,7 +295,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 5)
+    assert(store.get().gui_revision == 6)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)
@@ -306,6 +316,7 @@ script.on_nth_tick(1, function()
   assert(marker.visible and not marker.enabled and marker.tooltip[2][1] == "todo.missing-surface")
   local ok, err = locations.navigate(game.get_player(1), task)
   assert(not ok and err == "missing_surface")
+  production_gui_checks(player)
   store.player(1).pinned = {}
   local old_panel = player.gui.screen.todo_manager_panel
   old_panel.todo_panel_tree.clear()

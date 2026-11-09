@@ -2,6 +2,7 @@ local tasks = require("scripts.task_manager")
 local store = require("scripts.storage")
 local common = require("gui.common")
 local locations = require("scripts.location_manager")
+local resolver = require("scripts.recipe_resolver")
 local M = {}
 local colors = {
   TODO = {r = 0.95, g = 0.95, b = 0.95},
@@ -21,7 +22,7 @@ function M.render(parent, player, compact)
   end
   local entries = tasks.tree(prefs.collapsed, roots)
   local children = parent.children
-  local rebuild = parent.tags.todo_tree_layout ~= 5 or #children ~= #entries
+  local rebuild = parent.tags.todo_tree_layout ~= 6 or #children ~= #entries
   if not rebuild then
     for index, entry in ipairs(entries) do
       local row = children[index]
@@ -33,7 +34,7 @@ function M.render(parent, player, compact)
   end
   if rebuild then
     parent.clear()
-    parent.tags = {todo_tree_layout = 5}
+    parent.tags = {todo_tree_layout = 6}
   end
   local counts = {}
   for _, task in ipairs(tasks.list()) do
@@ -59,7 +60,7 @@ function M.render(parent, player, compact)
       progress_width = math.max(progress_width, #(count.done .. "/" .. count.total) * 8)
     end
   end
-  local fixed_width = (compact and 154 or 250) + progress_width
+  local fixed_width = (compact and 186 or 282) + progress_width
   local title_width = math.max(64, parent.style.minimal_width - fixed_width - 16)
   for _, entry in ipairs(entries) do
     local task = entry.task
@@ -82,6 +83,9 @@ function M.render(parent, player, compact)
       common.sprite(row, "show_location", "map", task.id)
       local location_space = row.add{type = "empty-widget", name = "todo_location_space"}
       location_space.style.width = 28
+      common.sprite(row, "decompose", "change_recipe", task.id, {"todo.production-decompose"})
+      local production_space = row.add{type = "empty-widget", name = "todo_production_space"}
+      production_space.style.width = 28
       common.sprite(row, "pin", "track_button", task.id)
       if not compact then
         common.sprite(row, "new_child", "add", task.id, {"todo.new-child"})
@@ -118,6 +122,13 @@ function M.render(parent, player, compact)
     row.todo_location_space.visible = not row.todo_show_location.visible
     row.todo_show_location.tooltip = locations.describe(task)
     row.todo_show_location.enabled = task.surface_index ~= nil and game.surfaces[task.surface_index] ~= nil
+    row.todo_decompose.visible = task.production ~= nil
+    row.todo_production_space.visible = task.production == nil
+    if task.production then
+      local target = resolver.prototype(task.production.type, task.production.name)
+      row.todo_decompose.sprite = target and task.production.type .. "/" .. task.production.name or "utility/change_recipe"
+      row.todo_decompose.tooltip = {"", target and target.localised_name or task.production.name, "\n", {"todo.production-decompose"}}
+    end
     row.todo_pin.tooltip = {prefs.pinned[task.id] and "todo.unpin" or "todo.pin"}
     row.todo_pin.toggled = prefs.pinned[task.id] == true
   end

@@ -50,14 +50,22 @@ def test(binary):
         target = mods / "todo-manager"
         stage(target)
         shutil.copy2(ROOT / "tests/engine_smoke.lua", target / "engine_smoke.lua")
-        shutil.copy2(ROOT / "tests/model_checks.lua", target / "model_checks.lua")
+        for name in ("model_checks", "production_checks", "production_gui_checks"):
+            shutil.copy2(ROOT / "tests" / f"{name}.lua", target / f"{name}.lua")
+        fixture = mods / "todo-production-fixtures"
+        fixture.mkdir()
+        (fixture / "info.json").write_text(json.dumps({
+            "name": "todo-production-fixtures", "version": "1.0.0", "title": "Todo production test fixtures",
+            "author": "test", "factorio_version": "2.1", "dependencies": ["base", "todo-manager"]
+        }))
+        shutil.copy2(ROOT / "tests/production_data.lua", fixture / "data-final-fixes.lua")
         with (target / "control.lua").open("a") as control:
             control.write('\nrequire("engine_smoke")\n')
         data = binary.parents[2] / "data"
         builtin = {path.parent.name for path in data.glob("*/info.json")}
         (mods / "mod-list.json").write_text(json.dumps({"mods": [
-            {"name": name, "enabled": name in ("base", "todo-manager")}
-            for name in sorted((builtin - {"core"}) | {"todo-manager"})
+            {"name": name, "enabled": name in ("base", "todo-manager", "todo-production-fixtures")}
+            for name in sorted((builtin - {"core"}) | {"todo-manager", "todo-production-fixtures"})
         ]}))
         config = work / "config.ini"
         config.write_text(f"[path]\nread-data={data}\nwrite-data={work / 'write'}\n")
@@ -67,7 +75,7 @@ def test(binary):
         save = work / "test.zip"
         steps = [
             (["--create", str(save)], ("TODO_STORAGE_WRITTEN",)),
-            (["--test-save", str(save), "--test-ticks", "5"], ("TODO_RELOAD_OK", "TODO_MODEL_OK", "TODO_UI_RELOAD_OK", "TODO_RUNTIME_OK")),
+            (["--test-save", str(save), "--test-ticks", "5"], ("TODO_RELOAD_OK", "TODO_MODEL_OK", "TODO_PRODUCTION_OK", "TODO_PRODUCTION_GUI_OK", "TODO_UI_RELOAD_OK", "TODO_RUNTIME_OK")),
         ]
         for arguments, markers in steps:
             result = subprocess.run(common + arguments, env=env, text=True, stdout=subprocess.PIPE,
@@ -78,12 +86,15 @@ def test(binary):
             for marker in markers:
                 print(f"{marker} : OK", flush=True)
         legacy = work / "legacy.zip"
-        for name in ("legacy_seed", "upgrade_checks"):
+        for name in ("legacy_seed", "upgrade_checks", "v1_seed", "v1_upgrade_checks"):
             shutil.copy2(ROOT / "tests" / f"{name}.lua", target / f"{name}.lua")
         upgrade_steps = [
             ('require("legacy_seed")\n', ["--create", str(legacy)], "TODO_LEGACY_WRITTEN"),
             ((ROOT / "control.lua").read_text() + '\nrequire("upgrade_checks")\n',
              ["--benchmark", str(legacy), "--benchmark-ticks", "2", "--benchmark-runs", "1"], "TODO_UPGRADE_OK"),
+            ('require("v1_seed")\n', ["--create", str(work / "v1.zip")], "TODO_V1_WRITTEN"),
+            ((ROOT / "control.lua").read_text() + '\nrequire("v1_upgrade_checks")\n',
+             ["--benchmark", str(work / "v1.zip"), "--benchmark-ticks", "2", "--benchmark-runs", "1"], "TODO_V1_UPGRADE_OK"),
         ]
         for control, arguments, marker in upgrade_steps:
             (target / "control.lua").write_text(control)

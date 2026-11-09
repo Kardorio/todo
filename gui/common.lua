@@ -7,7 +7,7 @@ end
 
 function M.preserve_window(player, action)
   local frame
-  for _, name in ipairs({"todo_manager_window", "todo_manager_editor"}) do
+  for _, name in ipairs({"todo_manager_window", "todo_manager_editor", "todo_manager_production"}) do
     local candidate = player.gui.screen[name]
     if candidate and player.opened == candidate then frame = candidate break end
   end
@@ -55,6 +55,7 @@ function M.owns(element)
   while element and element.valid do
     if element.name == "todo_manager_window" or element.name == "todo_manager_panel"
       or element.name == "todo_manager_editor"
+      or element.name == "todo_manager_production"
       or element.name == "todo_manager_open" or element.name == "todo_manager_toggle_panel" then
       return true
     end

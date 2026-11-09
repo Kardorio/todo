@@ -5,15 +5,18 @@ local panel = require("gui.compact_panel")
 local editor = require("gui.task_editor")
 local common = require("gui.common")
 local locations = require("scripts.location_manager")
+local selector = require("gui.production_selector")
 local M = {}
-local gui_revision = 5
+local gui_revision = 6
 
 local function open_list(player)
+  selector.close(player)
   editor.close(player)
   window.open(player)
 end
 
 local function open_editor(player, id, parent_id)
+  selector.close(player)
   window.close(player)
   editor.open(player, id, parent_id)
 end
@@ -40,6 +43,7 @@ function M.initialize()
       window.open(player)
     end
     editor.close(player)
+    selector.close(player)
     local old_panel = player.gui.screen.todo_manager_panel
     if old_panel then old_panel.destroy() end
     panel.render(player)
@@ -48,7 +52,7 @@ end
 
 function M.ensure_ready()
   local state = store.get()
-  if not state or state.schema_version ~= 2 or state.gui_revision ~= gui_revision then M.initialize() end
+  if not state or state.schema_version ~= 3 or state.gui_revision ~= gui_revision then M.initialize() end
 end
 
 function M.first_tick()
@@ -58,7 +62,7 @@ end
 
 function M.loaded()
   local state = store.get()
-  local needs_migration = not state or state.schema_version ~= 2 or state.gui_revision ~= gui_revision
+  local needs_migration = not state or state.schema_version ~= 3 or state.gui_revision ~= gui_revision
   script.on_event(defines.events.on_tick, needs_migration and M.first_tick or nil)
 end
 
@@ -134,6 +138,13 @@ function M.clicked(event)
   elseif action == "location_current" then editor.location(player, false)
   elseif action == "location_clear" then editor.location(player, true)
   elseif action == "location_go" then editor.navigate(player)
+  elseif action == "decompose" then
+    if player.gui.screen.todo_manager_editor then editor.error(player, "save_before_decompose")
+    elseif tasks.get(id) then window.close(player) selector.open(player, id) end
+  elseif action == "close_production" then open_list(player)
+  elseif action == "production_edit" then open_editor(player, id)
+  elseif action == "production_add" then
+    if selector.add(player) then open_list(player) M.refresh() end
   elseif action == "show_location" then
     local task = tasks.get(id)
     if task then
@@ -147,7 +158,9 @@ end
 
 function M.checked(event)
   local player, element, tags = event_context(event)
-  if not player or tags.todo_action ~= "done" then return end
+  if not player then return end
+  if tags.todo_action == "production_ingredient" then selector.selection_changed(player) return end
+  if tags.todo_action ~= "done" then return end
   local task = tasks.get(tags.task_id)
   if not task then M.refresh() return end
   local _, err = tasks.update(task.id, {status = element.state and "DONE" or "TODO"}, task.revision)
@@ -164,7 +177,15 @@ function M.closed(event)
   elseif editor.is_window(event.element) then
     local player = game.get_player(event.player_index)
     if player then open_list(player) end
+  elseif selector.is_window(event.element) then
+    local player = game.get_player(event.player_index)
+    if player then open_list(player) end
   end
+end
+
+function M.production_changed(event)
+  local player, element = event_context(event)
+  if player then editor.production_changed(player, element) end
 end
 
 function M.moved(event)

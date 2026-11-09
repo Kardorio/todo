@@ -2,6 +2,7 @@ local tasks = require("scripts.task_manager")
 local store = require("scripts.storage")
 local locations = require("scripts.location_manager")
 local common = require("gui.common")
+local production_fields = require("gui.production_fields")
 local M = {}
 local statuses = {"TODO", "IN_PROGRESS", "DONE", "IGNORED"}
 
@@ -78,6 +79,7 @@ function M.open(player, id, parent_id)
   pane.tags = {task_id = task and task.id or 0, revision = task and task.revision or 0,
     parent_ids = ids, position = task and task.position or false,
     surface_index = task and task.surface_index or false}
+  production_fields.render(pane, task and task.production or false, player)
   if task then
     pane.add{type = "label", caption = {"todo.author", task.creator_name, task.created_at}}
   end
@@ -158,27 +160,34 @@ function M.save(player)
   local pane = holder(player)
   if not pane then return end
   local tags = pane.tags
+  local target, target_error = production_fields.read(pane)
+  if target == nil then M.error(player, target_error) return end
   local parent_id = tags.parent_ids[pane.todo_parent.selected_index]
   local changes = {
     title = pane.todo_title.text, description = pane.todo_description.text,
     status = statuses[pane.todo_status.selected_index], priority = pane.todo_priority.selected_index - 1,
     parent_id = parent_id ~= 0 and parent_id or false,
-    position = tags.position, surface_index = tags.surface_index
+    position = tags.position, surface_index = tags.surface_index, production = target
   }
   local task, err
   if tags.task_id == 0 then
-    task, err = tasks.create(changes.title, player, game.tick, parent_id ~= 0 and parent_id or nil, false)
-    if task then
-      local id = task.id
-      task, err = tasks.update(id, changes, task.revision)
-      if not task then tasks.delete(id) end
-    end
+    task, err = tasks.create(changes.title, player, game.tick, parent_id ~= 0 and parent_id or nil, false, changes)
   else
     task, err = tasks.update(tags.task_id, changes, tags.revision)
   end
   if not task then M.error(player, err) return nil end
   if tags.task_id == 0 then store.player(player.index).pinned[task.id] = true end
   return task
+end
+
+function M.production_changed(player, element)
+  local pane = holder(player)
+  if not pane then return end
+  local action = element.tags.todo_action
+  if action == "production_target" then production_fields.target_changed(pane, player, element)
+  elseif action == "production_recipe" then production_fields.recipe_changed(pane, player)
+  elseif action == "production_quantity" then production_fields.refresh(pane, player)
+  end
 end
 
 function M.reload(player)

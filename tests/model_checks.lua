@@ -9,7 +9,7 @@ return function(player)
       creator_name = "Fixture", created_at = 12, position = {x = 5, y = -8}, surface_index = 1}
   }, players = {[1] = {panel_visible = false, panel_location = {x = 10, y = 20}}}}
   local migrated = store.initialize()
-  assert(migrated.schema_version == 2 and migrated.next_id == 8)
+  assert(migrated.schema_version == 3 and migrated.next_id == 8)
   assert(migrated.tasks[7].priority == 0 and migrated.tasks[7].order == 7)
   assert(migrated.tasks[7].revision == 1 and migrated.tasks[7].description == "Notes")
   assert(migrated.players[1].pinned and migrated.players[1].collapsed)
