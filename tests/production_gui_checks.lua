@@ -2,7 +2,6 @@ local runtime = require("scripts.runtime")
 local tasks = require("scripts.task_manager")
 local store = require("scripts.storage")
 local production = require("scripts.production_manager")
-local target_picker = require("gui.target_picker")
 local editor = require("gui.task_editor")
 
 local function find(root, name)
@@ -27,24 +26,13 @@ return function(player)
   local function chooser() return player.gui.screen.todo_manager_production end
   local function select_target(kind, name)
     local original = player.gui.screen.todo_manager_editor
-    click(pane().todo_title_row.todo_choose_target)
-    local target_frame = player.gui.screen.todo_manager_target_picker
-    assert(target_frame and original.valid and not original.visible and player.opened == target_frame)
-    target_frame.todo_target_controls.todo_target_search.text = name
-    changed(target_frame.todo_target_controls.todo_target_search)
-    for _, row in ipairs(target_frame.todo_target_results.children) do
-      local button = row.todo_target_pick
-      if button then
-        local candidate_kind, candidate_name = target_picker.choice(player, button)
-        if candidate_kind == kind and candidate_name == name then
-          click(button)
-          assert(original.valid and original.visible and player.opened == original)
-          assert(not player.gui.screen.todo_manager_target_picker)
-          return
-        end
-      end
-    end
-    error("Target missing: " .. kind .. "/" .. name)
+    local button = pane().todo_title_row.todo_choose_target
+    assert(button.type == "choose-elem-button" and button.elem_type == "signal")
+    button.elem_value = name and {type = kind, name = name} or nil
+    changed(button)
+    assert(original.valid and original.visible and player.opened == original)
+    assert(not player.gui.screen.todo_manager_target_picker)
+    if name then assert(pane().tags.production.type == kind and pane().tags.production.name == name) end
   end
   local function recipe(name)
     local fields = pane().todo_production
@@ -182,29 +170,16 @@ return function(player)
   assert(production.plan(tasks.get(recipe_id)).crafts == 2)
   click(find(player.gui.screen.todo_manager_window, "todo_new"))
   pane().todo_description.text = "Brouillon conservé"
-  click(pane().todo_title_row.todo_choose_target)
-  local target_frame = player.gui.screen.todo_manager_target_picker
-  assert(#target_frame.todo_target_results.children <= 40)
-  local picker_state = store.player(player.index).target_picker
-  click(target_frame.todo_target_navigation.todo_target_next)
-  assert(picker_state.page == 2)
-  target_picker.tick()
-  local translated_id, translated_index = next(picker_state.pending)
-  assert(translated_id and translated_index)
-  local translated_entry = picker_state.entries[translated_index]
-  runtime.translated{player_index = player.index, id = translated_id, translated = true, result = "Élément de démonstration"}
-  target_frame.todo_target_controls.todo_target_search.text = "element de demonstration"
-  changed(target_frame.todo_target_controls.todo_target_search)
-  assert(#target_frame.todo_target_results.children == 1 and picker_state.page == 1)
-  local result_button = target_frame.todo_target_results.children[1].todo_target_pick
-  local result_kind, result_name, result_label = target_picker.choice(player, result_button)
-  assert(result_kind == translated_entry.kind and result_name == translated_entry.name and result_label == "Élément de démonstration")
-  target_frame.todo_target_controls.todo_target_filter.selected_index = translated_entry.kind == "fluid" and 2 or 3
-  changed(target_frame.todo_target_controls.todo_target_filter)
-  assert(not target_frame.todo_target_results.children[1].todo_target_pick)
-  runtime.closed{player_index = player.index, element = target_frame}
-  assert(player.gui.screen.todo_manager_editor.visible and pane().todo_description.text == "Brouillon conservé")
   select_target("item", "todo-test-goal")
+  assert(pane().todo_description.text == "Brouillon conservé")
+  assert(pane().todo_title_row.todo_choose_target.elem_value.type == nil)
+  local target_button = pane().todo_title_row.todo_choose_target
+  local original_title = pane().todo_title_row.todo_title.text
+  target_button.elem_value = {type = "virtual", name = "signal-A"}
+  changed(target_button)
+  assert(pane().todo_error.caption[1] == "todo.error-invalid_target_signal")
+  assert(pane().tags.production.name == "todo-test-goal" and target_button.elem_value.name == "todo-test-goal")
+  assert(pane().todo_title_row.todo_title.text == original_title)
   local pending = pane().tags.title_translation
   assert(pending and pane().todo_title_row.todo_title.text == "todo-test-goal")
   click(find(pane(), "todo_save"))
@@ -226,6 +201,9 @@ return function(player)
   assert(pane().todo_title_row.todo_title.text == "todo-test-fluid")
   runtime.translated{player_index = player.index, id = fluid_pending.id, translated = true, result = "Fluide traduit"}
   assert(pane().todo_title_row.todo_title.text == "Fluide traduit")
+  select_target()
+  assert(not pane().tags.production and not pane().todo_production.visible)
+  assert(not pane().todo_title_row.todo_choose_target.elem_value)
   pane().todo_title_row.todo_title.text = "Mon titre personnel"
   changed(pane().todo_title_row.todo_title)
   select_target("recipe", "todo-test-alpha")

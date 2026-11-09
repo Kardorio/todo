@@ -114,8 +114,9 @@ Aucun contrôle de couverture ni pré-commit n'est configuré.
 
 ## Lot 2 : objectifs de production
 
-Dans l'éditeur, le bouton à côté du titre ouvre un sélecteur commun aux objets,
-fluides et recettes, avec recherche par nom localisé et filtre facultatif par type.
+Dans l'éditeur, la case à côté du titre ouvre le sélecteur natif de Factorio,
+avec ses catégories d'icônes et sa recherche habituelle pour les objets, fluides
+et recettes. Les autres types de signaux sont refusés sans modifier l'objectif.
 Le choix remplit automatiquement un titre vide et actualise un titre précédemment
 généré ; un titre personnalisé est conservé. La cible et la recette ne sont
 enregistrées qu'avec le reste du formulaire. Le bouton de retrait de la cible

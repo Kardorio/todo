@@ -23,7 +23,7 @@ function M.refresh(pane, player)
   local value = pane.tags.production
   local target = value and resolver.prototype(value.type, value.name)
   fields.visible = value ~= false and value ~= nil
-  pane.todo_title_row.todo_choose_target.caption = {value and "todo.target-change" or "todo.target-choose"}
+  pane.todo_title_row.todo_choose_target.elem_value = target and {type = value.type, name = value.name} or nil
   fields.todo_target_name.caption = target and target.localised_name or
     {value and "todo.production-missing-target" or "todo.production-none"}
   fields.todo_quantity_label.caption = {value and value.type == "recipe" and "todo.production-crafts" or "todo.production-quantity"}
@@ -96,6 +96,18 @@ function M.set_target(pane, player, kind, name, label)
   end
   pane.tags = tags
   M.refresh(pane, player)
+end
+
+function M.target_changed(pane, player, element)
+  local signal = element.elem_value
+  local kind = signal and (signal.type or "item")
+  if signal and (kind ~= "item" and kind ~= "fluid" and kind ~= "recipe"
+      or not resolver.prototype(kind, signal.name)) then
+    M.refresh(pane, player)
+    return nil, "invalid_target_signal"
+  end
+  M.set_target(pane, player, kind, signal and signal.name)
+  return true
 end
 
 function M.retry_translation(pane, player)

@@ -51,8 +51,9 @@ function M.open(player, id, parent_id)
   local title_row = pane.add{type = "flow", name = "todo_title_row", direction = "horizontal"}
   local title = title_row.add{type = "textfield", name = "todo_title", text = task and task.title or "",
     tags = {todo_action = "production_title"}}
-  title.style.width = 270
-  common.button(title_row, "choose_target", {"todo.target-choose"}, nil, {"todo.target-choose-help"})
+  title.style.width = 310
+  title_row.add{type = "choose-elem-button", name = "todo_choose_target", elem_type = "signal",
+    tooltip = {"todo.target-choose-help"}, tags = {todo_action = "production_target"}}
   local description = field(pane, "todo.description", {type = "text-box", name = "todo_description",
     text = task and task.description or ""})
   description.word_wrap = true
@@ -193,7 +194,10 @@ function M.production_changed(player, element)
   local pane = holder(player)
   if not pane then return end
   local action = element.tags.todo_action
-  if action == "production_recipe" then production_fields.recipe_changed(pane, player)
+  if action == "production_target" then
+    local ok, err = production_fields.target_changed(pane, player, element)
+    if not ok then M.error(player, err) end
+  elseif action == "production_recipe" then production_fields.recipe_changed(pane, player)
   elseif action == "production_quantity" then production_fields.refresh(pane, player)
   elseif action == "production_title" then production_fields.title_changed(pane)
   end

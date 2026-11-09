@@ -296,10 +296,11 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 7)
+    assert(store.get().gui_revision == 8)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)
+    assert(not player.gui.screen.todo_manager_target_picker and not store.player(1).target_picker)
     assert(store.player(1).panel_visible and tasks.get(1).title == "Persistence fixture")
     log("TODO_UI_RELOAD_OK")
     log("TODO_RUNTIME_OK")
@@ -325,6 +326,8 @@ script.on_nth_tick(1, function()
   window.close(player)
   local old_window = player.gui.screen.add{type = "frame", name = "todo_manager_window"}
   old_window.add{type = "flow", name = "todo_content"}
+  player.gui.screen.add{type = "frame", name = "todo_manager_target_picker"}
+  store.player(1).target_picker = {entries = {{kind = "item", name = "iron-plate"}}}
   store.get().gui_revision = nil
   storage.todo_smoke_gui_reloaded = true
   game.reload_mods()
