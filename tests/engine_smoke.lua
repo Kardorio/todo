@@ -88,7 +88,7 @@ local function run_checks()
   end
   local function frame() return player.gui.screen.todo_manager_window end
   local function edit_frame() return player.gui.screen.todo_manager_editor end
-  local function pane() return edit_frame().todo_editor end
+  local function pane() return edit_frame().todo_body.todo_editor end
   local function tree() return frame().todo_tree end
   local function panel() return player.gui.screen.todo_manager_panel end
   assert(not panel())
@@ -237,9 +237,11 @@ local function run_checks()
   assert(not editor.save(player))
   assert(pane().todo_error.caption[1] == "todo.error-conflict")
   click(find(pane(), "todo_reload_editor"))
-  pane().todo_parent.selected_index = 1
+  assert(not pane().todo_parent)
   click(find(pane(), "todo_save"))
-  assert(not child.parent_id)
+  assert(child.parent_id == ui_task.id)
+  assert(tasks.update(child.id, {parent_id = false}))
+  runtime.refresh()
   local order = child.order
   click(tree()["task_" .. child.id].todo_up)
   assert(child.order ~= order)
@@ -273,18 +275,38 @@ local function run_checks()
   runtime.command{player_index = player.index, parameter = "Refresh"}
   assert(pane().todo_description.text == "Draft kept while another task changes")
   local original_editor = edit_frame()
-  click(find(pane(), "todo_location_go"))
+  local function location_panel() return edit_frame().todo_body.todo_location_side end
+  assert(location_panel().todo_view.todo_camera.type == "camera")
+  assert(location_panel().todo_view.todo_camera.position.x == root.position.x)
+  local draft_location = pane().tags
+  local preview_surface = game.create_surface("todo-preview-surface", {width = 32, height = 32})
+  local preview_tags = pane().tags
+  preview_tags.position, preview_tags.surface_index = {x = 1, y = 2}, preview_surface.index
+  pane().tags = preview_tags
+  editor.refresh_location(player)
+  assert(location_panel().todo_view.todo_camera.surface_index == preview_surface.index)
+  game.delete_surface(preview_surface)
+  preview_tags.surface_index = 987654321
+  pane().tags = preview_tags
+  editor.refresh_location(player)
+  assert(not location_panel().todo_view.todo_camera and not location_panel().todo_location_go.enabled)
+  assert(location_panel().todo_location_clear.enabled)
+  assert(pane().todo_description.text == "Draft kept while another task changes")
+  pane().tags = draft_location
+  editor.refresh_location(player)
+  click(find(location_panel(), "todo_location_go"))
   assert(original_editor.valid and edit_frame() == original_editor and player.opened == original_editor)
   assert(pane().todo_description.text == "Draft kept while another task changes")
-  click(find(pane(), "todo_location_clear"))
+  click(find(location_panel(), "todo_location_clear"))
+  assert(not location_panel().todo_view.todo_camera and not location_panel().todo_location_go.enabled)
   assert(root.position)
   click(find(pane(), "todo_save"))
   assert(tasks.get(root.id) and not root.position and not root.surface_index)
   assert(not tree()["task_" .. root.id].todo_show_location.visible)
   click(tree()["task_" .. root.id].todo_edit)
-  click(find(pane(), "todo_location_go"))
-  assert(pane().todo_error.caption[1] == "todo.error-no_location" and not common.is_preserving(player.index))
-  click(find(pane(), "todo_location_current"))
+  assert(not location_panel().todo_location_go.enabled and not common.is_preserving(player.index))
+  click(find(location_panel(), "todo_location_current"))
+  assert(location_panel().todo_view.todo_camera.surface_index == player.surface.index)
   click(find(pane(), "todo_save"))
   assert(root.position.x == player.position.x)
   assert(tree()["task_" .. root.id].todo_show_location.visible)
@@ -358,7 +380,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 17)
+    assert(store.get().gui_revision == 18)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)
@@ -382,6 +404,10 @@ script.on_nth_tick(1, function()
   assert(marker.visible and not marker.enabled and marker.tooltip[2][1] == "todo.missing-surface")
   local ok, err = locations.navigate(game.get_player(1), task)
   assert(not ok and err == "missing_surface")
+  editor.open(player, task.id)
+  local missing_preview = player.gui.screen.todo_manager_editor.todo_body.todo_location_side
+  assert(not missing_preview.todo_view.todo_camera and not missing_preview.todo_location_go.enabled)
+  editor.close(player)
   production_gui_checks(player)
   factopedia_checks(player)
   store.player(1).pinned = {}

@@ -19,7 +19,7 @@ return function(player)
   local handler = assert(script.get_event_handler("todo-manager-add-target"))
   assert(handler == runtime.from_hover)
   local function frame() return player.gui.screen.todo_manager_editor end
-  local function pane() return frame().todo_editor end
+  local function pane() return frame().todo_body.todo_editor end
   local function invoke(kind, name)
     handler{player_index = player.index, in_gui = true, selected_prototype = kind and {base_type = kind, name = name} or nil}
   end

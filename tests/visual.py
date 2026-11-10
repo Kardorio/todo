@@ -55,7 +55,7 @@ def main():
             raise RuntimeError(created.stdout[-8000:])
         log_path = output / "visual.log"
         marker = write / "script-output/todo-visual-result.txt"
-        names = ("todo-reminder.png", "todo-management.png", "todo-factopedia.png", "todo-from-factopedia.png")
+        names = ("todo-reminder.png", "todo-management.png", "todo-factopedia.png", "todo-from-factopedia.png", "todo-location-editor.png")
         with log_path.open("w") as log:
             process = subprocess.Popen(base + ["--window-size", "1280x900", "--force-graphics-preset", "very-low",
                                                "--load-game", str(work / "test.zip")], env=env,

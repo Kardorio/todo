@@ -16,20 +16,22 @@ un raccourci de création depuis les prototypes survolés dans la Factoriopedia.
   par défaut.
 - La fenêtre principale contient uniquement le listing. Cliquer sur un titre
   ou sur **+** ouvre une fenêtre distincte d'édition ou d'ajout : titre,
-  description, statut, priorité et parent. **Enregistrer** applique les
+  description, statut et priorité. **Enregistrer** applique les
   modifications puis revient au listing ; **Recharger** les abandonne.
   Fermer l'éditeur revient également au listing sans enregistrer.
   La création et l'édition sont accessibles à tous les joueurs.
-- Les flèches **↑ / ↓** réordonnent une tâche parmi ses sœurs. Le choix du parent
-  dans les détails déplace une tâche avec tous ses descendants. Les cycles sont
-  refusés ; aucune profondeur maximale n'est imposée au modèle.
+- Les flèches **↑ / ↓** réordonnent une tâche parmi ses sœurs. Le parent est
+  déterminé à la création depuis la liste et conservé lors de l'édition.
+  Aucune profondeur maximale n'est imposée au modèle.
 - La case d'une ligne marque la tâche comme terminée ; la décocher la remet à
   faire. Le formulaire donne accès aux quatre statuts : à faire, en cours,
   terminé et ignoré. Le compteur porte sur les enfants directs, hors ignorés.
   Il ne change jamais automatiquement le statut du parent.
-- Le bouton de géolocalisation capture la position actuelle ; la corbeille de
-  position la retire. Ces deux changements s'appliquent à l'enregistrement.
-  Le bouton carte ouvre la position affichée en vue distante, sans téléporter
+- Le cadre **Zone de la tâche**, à gauche de l'éditeur, affiche une miniature de
+  la position enregistrée, sa surface et ses coordonnées. **Utiliser ma position**
+  capture la position actuelle ; **Retirer la position** l'efface. Ces changements
+  s'appliquent à l'enregistrement. Sur un écran étroit, le cadre passe dans le formulaire.
+  **Voir sur la carte** ouvre la position affichée en vue distante, sans téléporter
   le personnage. Une surface supprimée est signalée et la tâche est conservée.
   Une icône de carte apparaît aussi dans le listing et le panneau compact pour
   les tâches géolocalisées : son infobulle donne la surface et les coordonnées,
@@ -120,8 +122,8 @@ moteur Steam n'est lancé. `FACTORIO_BIN` est obligatoire pour ce test.
 
 Le test graphique utilise un client autonome Factorio 2.1, avec rendu hors écran
 et profil temporaire, sans démarrer Steam ni utiliser les sauvegardes du joueur.
-Il produit quatre vraies captures dans `tests/visual-output/` : le rappel compact,
-la fenêtre de gestion, la Factoriopedia et le formulaire prérempli.
+Il produit cinq vraies captures dans `tests/visual-output/` : le rappel compact,
+la fenêtre de gestion, la Factoriopedia, le formulaire prérempli et l'éditeur avec aperçu de position.
 Sans variable `FACTORIO_GUI_BIN`, il cherche le client
 dans `.tools/factorio-standalone/bin/x64/factorio`.
 Une session avec plusieurs clients et le transfert d'une

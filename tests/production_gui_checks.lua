@@ -22,7 +22,7 @@ return function(player)
     runtime.production_changed{player_index = player.index, element = element}
   end
   local function list() return player.gui.screen.todo_manager_window.todo_tree end
-  local function pane() return player.gui.screen.todo_manager_editor.todo_editor end
+  local function pane() return player.gui.screen.todo_manager_editor.todo_body.todo_editor end
   local function chooser() return player.gui.screen.todo_manager_production end
   local function select_target(kind, name)
     local original = player.gui.screen.todo_manager_editor

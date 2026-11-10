@@ -3,12 +3,21 @@ local store = require("scripts.storage")
 local locations = require("scripts.location_manager")
 local common = require("gui.common")
 local production_fields = require("gui.production_fields")
+local location_preview = require("gui.location_preview")
 local M = {}
 local statuses = {"TODO", "IN_PROGRESS", "DONE", "IGNORED"}
 
 local function holder(player)
   local frame = player.gui.screen.todo_manager_editor
-  return frame and frame.todo_editor
+  return frame and frame.todo_body.todo_editor
+end
+
+local function refresh_preview(player)
+  local pane = holder(player)
+  if not pane then return end
+  local wide = player.display_resolution.width / player.display_scale >= 740
+  location_preview.refresh(pane.parent.todo_location_side, pane.tags, wide)
+  location_preview.refresh(pane.todo_location_inline, pane.tags, not wide)
 end
 
 function M.close(player)
@@ -25,6 +34,7 @@ function M.resize(player)
   if not pane then return end
   pane.style.width = 420
   pane.style.maximal_height = math.max(180, math.min(570, player.display_resolution.height / player.display_scale - 150))
+  refresh_preview(player)
 end
 
 local function field(parent, caption, spec)
@@ -37,18 +47,25 @@ function M.open(player, id, parent_id)
   if not frame then
     frame = player.gui.screen.add{type = "frame", name = "todo_manager_editor", direction = "vertical"}
     local header = common.header(frame, {id and "todo.details" or "todo.new"})
+    header.name = "todo_editor_header"
+    header.children[1].name = "todo_editor_heading"
     common.sprite(header, "close_editor", "close", nil, {"todo.cancel"})
-    frame.add{type = "scroll-pane", name = "todo_editor", direction = "vertical"}
+    local body = frame.add{type = "flow", name = "todo_body", direction = "horizontal"}
+    body.style.horizontal_spacing = 12
+    location_preview.create(body, "todo_location_side")
+    body.add{type = "scroll-pane", name = "todo_editor", direction = "vertical"}
     frame.auto_center = true
   end
   local pane = holder(player)
   if not pane then return end
+  frame.todo_editor_header.todo_editor_heading.caption = {id and "todo.details" or "todo.new"}
   pane.clear()
   local task = id and tasks.get(id)
   local prefs = store.player(player.index)
   prefs.selected_id = task and task.id or nil
   pane.tags = {task_id = task and task.id or 0, revision = task and task.revision or 0,
-    position = task and task.position or false, surface_index = task and task.surface_index or false}
+    position = task and task.position or false, surface_index = task and task.surface_index or false,
+    parent_id = parent_id or false}
   pane.add{type = "label", caption = {"todo.field-title"}}
   local title_row = pane.add{type = "flow", name = "todo_title_row", direction = "horizontal"}
   local title = title_row.add{type = "textfield", name = "todo_title", text = task and task.title or "",
@@ -77,32 +94,11 @@ function M.open(player, id, parent_id)
   for priority = 0, 3 do priorities[#priorities + 1] = {"todo.priority-" .. priority} end
   options.add{type = "drop-down", name = "todo_priority", items = priorities,
     selected_index = (task and task.priority or 0) + 1}.style.width = 184
-  local ids, parents, parent_index = {0}, {{"todo.root"}}, 1
-  local desired_parent = task and task.parent_id or parent_id
-  for _, candidate in ipairs(tasks.list()) do
-    if not task or tasks.can_parent(task.id, candidate.id) then
-      ids[#ids + 1] = candidate.id
-      parents[#parents + 1] = "#" .. candidate.id .. " " .. candidate.title
-      if candidate.id == desired_parent then parent_index = #ids end
-    end
-  end
-  local parent = field(pane, "todo.parent", {type = "drop-down", name = "todo_parent",
-    items = parents, selected_index = parent_index})
-  parent.style.width = 380
-  local tags = pane.tags
-  tags.parent_ids = ids
-  pane.tags = tags
   if task then
     local author = pane.add{type = "label", caption = {"todo.author", task.creator_name, task.created_at}}
     author.style.font_color = {r = 0.65, g = 0.65, b = 0.65}
   end
-  local location = pane.add{type = "label", name = "todo_location", caption = locations.describe(pane.tags)}
-  location.style.single_line = false
-  location.style.maximal_width = 310
-  local location_buttons = pane.add{type = "flow"}
-  common.sprite(location_buttons, "location_current", "gps_map_icon", nil, {"todo.location-current"})
-  common.sprite(location_buttons, "location_clear", "trash", nil, {"todo.location-clear"})
-  common.sprite(location_buttons, "location_go", "map", nil, {"todo.location-go"})
+  location_preview.create(pane, "todo_location_inline")
   local actions = pane.add{type = "flow"}
   local save = common.button(actions, "save", {"todo.save"})
   save.style = "confirm_button"
@@ -132,8 +128,8 @@ end
 
 function M.refresh_location(player)
   local pane = holder(player)
-  if pane and pane.todo_location then
-    pane.todo_location.caption = locations.describe(pane.tags)
+  if pane then
+    refresh_preview(player)
     production_fields.refresh_info(pane)
   end
 end
@@ -162,7 +158,7 @@ function M.location(player, clear)
   tags.position = location and location.position or false
   tags.surface_index = location and location.surface_index or false
   pane.tags = tags
-  pane.todo_location.caption = locations.describe(tags)
+  refresh_preview(player)
 end
 
 function M.navigate(player)
@@ -185,16 +181,15 @@ function M.save(player)
   end
   local target, target_error = production_fields.read(pane)
   if target == nil then M.error(player, target_error) return end
-  local parent_id = tags.parent_ids[pane.todo_parent.selected_index]
+  local parent_id = tags.parent_id
   local changes = {
     title = pane.todo_title_row.todo_title.text, description = pane.todo_description.text,
     status = statuses[pane.todo_options.todo_status.selected_index], priority = pane.todo_options.todo_priority.selected_index - 1,
-    parent_id = parent_id ~= 0 and parent_id or false,
     position = tags.position, surface_index = tags.surface_index, production = target
   }
   local task, err
   if tags.task_id == 0 then
-    task, err = tasks.create(changes.title, player, game.tick, parent_id ~= 0 and parent_id or nil, false, changes)
+    task, err = tasks.create(changes.title, player, game.tick, parent_id or nil, false, changes)
   else
     task, err = tasks.update(tags.task_id, changes, tags.revision)
   end
@@ -234,7 +229,7 @@ end
 
 function M.reload(player)
   local pane = holder(player)
-  if pane then M.open(player, pane.tags.task_id ~= 0 and pane.tags.task_id or nil) end
+  if pane then M.open(player, pane.tags.task_id ~= 0 and pane.tags.task_id or nil, pane.tags.parent_id) end
 end
 
 return M

@@ -32,7 +32,7 @@ script.on_event("todo-manager-add-target", function(event)
   if storage.probe_phase == "inventory-input" then
     assert(selected and selected.name == "locomotive" and selected.quality == "normal")
     original(event)
-    assert(player.gui.screen.todo_manager_editor.todo_editor.tags.production.name == "locomotive")
+    assert(player.gui.screen.todo_manager_editor.todo_body.todo_editor.tags.production.name == "locomotive")
     storage.probe_phase, storage.probe_capture = "inventory-result", game.tick + 60
     return
   end
@@ -42,8 +42,8 @@ script.on_event("todo-manager-add-target", function(event)
   assert(selected and selected.name == expected)
   original(event)
   local frame = assert(player.gui.screen.todo_manager_editor, "Real shortcut did not open the editor")
-  assert(frame.todo_editor.tags.production.name == expected)
-  assert(not frame.todo_editor.tags.position and store.get().next_id == 1)
+  assert(frame.todo_body.todo_editor.tags.production.name == expected)
+  assert(not frame.todo_body.todo_editor.tags.position and store.get().next_id == 1)
   storage.probe_phase, storage.probe_capture = right and "result-right" or "result", game.tick + 60
 end)
 
@@ -59,7 +59,7 @@ local function tick(event)
       path = "todo-native-inventory.png", force_render = true}
     storage.probe_phase = "inventory-input"
   elseif storage.probe_phase == "inventory-result" and event.tick >= storage.probe_capture then
-    local pane = player.gui.screen.todo_manager_editor.todo_editor
+    local pane = player.gui.screen.todo_manager_editor.todo_body.todo_editor
     if pane.tags.title_translation then return end
     assert(pane.tags.production.name == "locomotive" and store.get().next_id == 1)
     editor.close(player)
@@ -82,7 +82,7 @@ local function tick(event)
     helpers.write_file("todo-native-ready.txt", "READY", false)
     storage.probe_phase = "factopedia-input"
   elseif storage.probe_phase == "result" and event.tick >= storage.probe_capture then
-    local pane = player.gui.screen.todo_manager_editor.todo_editor
+    local pane = player.gui.screen.todo_manager_editor.todo_body.todo_editor
     if pane.tags.title_translation then return end
     assert(pane.todo_title_row.todo_title.text == "Locomotive")
     game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
@@ -96,7 +96,7 @@ local function tick(event)
       path = "todo-native-right-before.png", force_render = true}
     storage.probe_phase = "factopedia-right-input"
   elseif storage.probe_phase == "result-right" and event.tick >= storage.probe_capture then
-    local pane = player.gui.screen.todo_manager_editor.todo_editor
+    local pane = player.gui.screen.todo_manager_editor.todo_body.todo_editor
     if pane.tags.title_translation then return end
     assert(pane.tags.production.name == "iron-plate" and pane.todo_title_row.todo_title.text ~= "iron-plate")
     game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
