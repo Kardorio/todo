@@ -35,6 +35,7 @@ local function tick(event)
     local prefs = store.player(player.index)
     prefs.pinned = {[locomotive.id] = true, [station.id] = true, [note.id] = true}
     prefs.panel_visible = true
+    prefs.panel_width = 508
     prefs.panel_location = {x = 36, y = 110}
     runtime.refresh()
     local rows = player.gui.screen.todo_manager_panel.todo_panel_tree

@@ -8,7 +8,7 @@ local locations = require("scripts.location_manager")
 local selector = require("gui.production_selector")
 local factopedia = require("integrations.factopedia")
 local M = {}
-local gui_revision = 15
+local gui_revision = 16
 
 local function open_list(player)
   selector.close(player)
@@ -108,40 +108,27 @@ local function open_hover_target(player, kind, name)
   end
   player.close_factoriopedia_gui()
   open_editor(player)
-  editor.set_target(player, kind, name)
+  if kind then editor.set_target(player, kind, name) end
 end
 
 function M.from_hover(event)
   M.ensure_ready()
   local player = game.get_player(event.player_index)
   if not player then return end
-  -- Stack and quality-aware slots already use Shift-click for transfers.
-  if not event.in_gui or event.element or not event.selected_prototype or event.selected_prototype.quality then return end
+  if not event.selected_prototype then return end
   local kind, name, err = factopedia.target(event.selected_prototype)
   if not kind then
     if err ~= "unsupported_hovered_target" then player.print({"todo.error-" .. err}) end
     return
   end
-  if kind == "recipe" and player.opened_gui_type == defines.gui_type.controller then
-    local prefs = store.player(player.index)
-    local crafts = prefs.native_crafts
-    if crafts and crafts.tick == game.tick and crafts.recipes[name] then return end
-    -- Native crafting and the custom input may be delivered in either order.
-    prefs.pending_hover = {kind = kind, name = name, tick = game.tick}
-    return
-  end
   open_hover_target(player, kind, name)
 end
 
-function M.crafting_queued(event)
+function M.shortcut(event)
+  if event.prototype_name ~= "todo-manager-new-task" then return end
   M.ensure_ready()
-  local prefs = store.player(event.player_index)
-  if not prefs.native_crafts or prefs.native_crafts.tick ~= game.tick then
-    prefs.native_crafts = {tick = game.tick, recipes = {}}
-  end
-  prefs.native_crafts.recipes[event.recipe.name] = true
-  local pending = prefs.pending_hover
-  if pending and pending.tick == game.tick and pending.name == event.recipe.name then prefs.pending_hover = nil end
+  local player = game.get_player(event.player_index)
+  if player then open_hover_target(player) end
 end
 
 local function event_context(event)
@@ -160,6 +147,8 @@ function M.clicked(event)
   elseif action == "close_editor" then open_list(player)
   elseif action == "preview_ingredients" then editor.production_changed(player, element)
   elseif action == "toggle_panel" then panel.toggle(player)
+  elseif action == "narrow_panel" then panel.change_width(player, -64)
+  elseif action == "widen_panel" then panel.change_width(player, 64)
   elseif action == "new" then open_editor(player)
   elseif action == "edit" then
     if tasks.get(id) then open_editor(player, id) end
@@ -245,17 +234,10 @@ function M.translated(event)
   editor.translated(event)
 end
 
-function M.translation_tick(event)
+function M.translation_tick()
   M.ensure_ready()
   for _, player in pairs(game.connected_players) do
     editor.retry_translation(player)
-    local prefs = store.player(player.index)
-    local pending = prefs.pending_hover
-    if pending and pending.tick < (event and event.tick or game.tick) then
-      prefs.pending_hover = nil
-      open_hover_target(player, pending.kind, pending.name)
-    end
-    if prefs.native_crafts and prefs.native_crafts.tick < game.tick then prefs.native_crafts = nil end
   end
 end
 

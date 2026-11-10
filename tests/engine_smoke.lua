@@ -11,6 +11,7 @@ local production_checks = require("production_checks")
 local production_gui_checks = require("production_gui_checks")
 local factopedia_checks = require("factopedia_checks")
 local mod_gui = require("mod-gui")
+local panel_renderer = require("gui.compact_panel")
 local loaded = false
 
 local function find(root, name)
@@ -37,6 +38,7 @@ script.on_init(function()
   prefs.collapsed[root.id] = true
   prefs.panel_visible = false
   prefs.panel_location = {x = 40, y = 80}
+  prefs.panel_width = 380
   log("TODO_STORAGE_WRITTEN")
 end)
 
@@ -53,7 +55,7 @@ local function run_checks()
     on_gui_elem_changed = runtime.production_changed, on_gui_selection_state_changed = runtime.production_changed,
     on_gui_text_changed = runtime.production_changed,
     on_string_translated = runtime.translated,
-    on_pre_player_crafted_item = runtime.crafting_queued,
+    on_lua_shortcut = runtime.shortcut,
     on_gui_location_changed = runtime.moved, on_player_display_resolution_changed = runtime.resized,
     on_player_display_scale_changed = runtime.resized, on_surface_deleted = runtime.refresh
   }
@@ -73,6 +75,7 @@ local function run_checks()
   local prefs = store.player(1)
   assert(prefs.pinned[1] and prefs.collapsed[1] and not prefs.panel_visible)
   assert(prefs.panel_location.x == 40 and prefs.panel_location.y == 80)
+  assert(prefs.panel_width == 380)
   log("TODO_RELOAD_OK")
   local player = assert(game.get_player(1))
   player.set_controller{type = defines.controllers.god}
@@ -163,6 +166,26 @@ local function run_checks()
     end
   end
   assert(#panel().todo_panel_tree.children == 2)
+  local original_width = panel().todo_panel_tree.task_1.todo_title.style.minimal_width
+  click(find(panel(), "todo_widen_panel"))
+  assert(prefs.panel_width == 444 and panel().todo_panel_tree.style.minimal_width == 444)
+  assert(panel().todo_panel_tree.task_1.todo_title.style.minimal_width == original_width + 64)
+  assert(panel().todo_panel_tree.task_2.todo_indent.style.minimal_width == 24)
+  click(find(panel(), "todo_toggle_panel"))
+  panel_renderer.toggle(player)
+  assert(panel().todo_panel_tree.style.minimal_width == 444)
+  click(find(panel(), "todo_narrow_panel"))
+  assert(prefs.panel_width == 380)
+  panel_renderer.change_width(player, -10000)
+  assert(prefs.panel_width == 300)
+  panel_renderer.change_width(player, 10000)
+  local maximum = math.max(300, math.floor(player.display_resolution.width / player.display_scale - 48))
+  assert(prefs.panel_width == maximum)
+  panel_renderer.resized{index = player.index, gui = player.gui, display_resolution = {width = 800, height = 600}, display_scale = 1.25}
+  assert(panel().todo_panel_tree.style.minimal_width == 592 and prefs.panel_width == maximum)
+  assert(not store.player(987654).panel_width)
+  prefs.panel_width = 380
+  panel_renderer.resized(player)
   local children_reads, actual_tree = 0, tree()
   local proxy = setmetatable({}, {__index = function(_, key)
     if key == "children" then children_reads = children_reads + 1 end
@@ -335,7 +358,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 15)
+    assert(store.get().gui_revision == 16)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)

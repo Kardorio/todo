@@ -72,14 +72,17 @@ with tempfile.TemporaryDirectory(prefix="todo-native-input-") as directory:
         window = subprocess.check_output(["xdotool", "search", "--onlyvisible", "--pid", str(process.pid)], env=env, text=True).splitlines()[0]
         subprocess.run(["xdotool", "windowfocus", "--sync", window], env=env, check=True)
 
-        def gesture(x, y):
+        def gesture(x, y, control=True):
             subprocess.run(["xdotool", "mousemove", "--window", window, str(x), str(y)], env=env, check=True)
             time.sleep(0.5)
-            subprocess.run(["xdotool", "keydown", "Shift_L"], env=env, check=True)
+            keys = ["Control_L", "Shift_L"] if control else ["Shift_L"]
+            for key in keys:
+                subprocess.run(["xdotool", "keydown", key], env=env, check=True)
             try:
                 subprocess.run(["xdotool", "click", "1"], env=env, check=True)
             finally:
-                subprocess.run(["xdotool", "keyup", "Shift_L"], env=env, check=True)
+                for key in reversed(keys):
+                    subprocess.run(["xdotool", "keyup", key], env=env, check=True)
 
         gesture(141, 252)
         deadline = time.monotonic() + 20
@@ -87,7 +90,7 @@ with tempfile.TemporaryDirectory(prefix="todo-native-input-") as directory:
             assert process.poll() is None, (work / "game.log").read_text()[-7000:]
             time.sleep(0.2)
         assert complete_png(scripts / "todo-native-crafting.png"), (work / "game.log").read_text()[-7000:]
-        gesture(737, 302)
+        gesture(737, 302, control=False)
         deadline = time.monotonic() + 60
         while time.monotonic() < deadline and not complete_png(scripts / "todo-native-before.png"):
             assert process.poll() is None, (work / "game.log").read_text()[-7000:]
@@ -96,15 +99,24 @@ with tempfile.TemporaryDirectory(prefix="todo-native-input-") as directory:
         shutil.copy2(scripts / "todo-native-before.png", output / "todo-native-before.png")
         gesture(335, 470)
         deadline = time.monotonic() + 20
+        while time.monotonic() < deadline and not complete_png(scripts / "todo-native-right-before.png"):
+            assert process.poll() is None, (work / "game.log").read_text()[-7000:]
+            time.sleep(0.2)
+        assert complete_png(scripts / "todo-native-right-before.png"), (work / "game.log").read_text()[-7000:]
+        shutil.copy2(scripts / "todo-native-right-before.png", output / "todo-native-right-before.png")
+        gesture(685, 225)
+        deadline = time.monotonic() + 20
         while time.monotonic() < deadline and not ((scripts / "todo-native-done.txt").exists()
-                                                 and complete_png(scripts / "todo-native-after.png")):
+                                                 and complete_png(scripts / "todo-native-after.png")
+                                                 and complete_png(scripts / "todo-native-right-after.png")):
             if process.poll() is not None:
                 break
             time.sleep(0.2)
         raw = (scripts / "todo-native-selected.txt").read_text() if (scripts / "todo-native-selected.txt").exists() else "no event"
-        assert (scripts / "todo-native-done.txt").exists() and complete_png(scripts / "todo-native-after.png"), raw + "\n" + (work / "game.log").read_text()[-5000:]
+        assert (scripts / "todo-native-done.txt").exists() and complete_png(scripts / "todo-native-right-after.png"), raw + "\n" + (work / "game.log").read_text()[-5000:]
         shutil.copy2(scripts / "todo-native-after.png", output / "todo-native-after.png")
-        print("REAL FACTOPEDIA SHIFT CLICK OK:", raw)
+        shutil.copy2(scripts / "todo-native-right-after.png", output / "todo-native-right-after.png")
+        print("REAL FACTOPEDIA CTRL SHIFT CLICK OK:", raw)
         print(output / "todo-native-after.png")
     finally:
         for child in (process, server):

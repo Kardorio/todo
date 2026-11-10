@@ -14,7 +14,8 @@ end
 
 return function(player)
   local input = assert(prototypes.custom_input["todo-manager-add-target"])
-  assert(input.include_selected_prototype and input.key_sequence == "SHIFT + mouse-button-1")
+  assert(input.include_selected_prototype and input.key_sequence == "CONTROL + SHIFT + mouse-button-1")
+  assert(prototypes.shortcut["todo-manager-new-task"])
   local handler = assert(script.get_event_handler("todo-manager-add-target"))
   assert(handler == runtime.from_hover)
   local function frame() return player.gui.screen.todo_manager_editor end
@@ -30,25 +31,26 @@ return function(player)
   invoke("technology", "automation")
   invoke("item", "todo-unknown-prototype")
   assert(not frame() and store.get().next_id == before)
-  player.opened = player
-  runtime.crafting_queued{player_index = player.index, recipe = {name = "todo-test-alpha"}}
-  invoke("recipe", "todo-test-alpha")
-  assert(not frame() and not store.player(player.index).pending_hover)
-  store.player(player.index).native_crafts = nil
-  invoke("recipe", "todo-test-alpha")
-  assert(not frame() and store.player(player.index).pending_hover)
-  runtime.crafting_queued{player_index = player.index, recipe = {name = "todo-test-alpha"}}
-  runtime.translation_tick{tick = game.tick + 1}
-  assert(not frame() and not store.player(player.index).pending_hover)
-  store.player(player.index).native_crafts = nil
-  invoke("recipe", "todo-test-alpha")
-  runtime.translation_tick{tick = game.tick + 1}
-  assert(frame() and pane().tags.production.recipe == "todo-test-alpha")
-  close()
   handler{player_index = player.index, in_gui = false, selected_prototype = {base_type = "item", name = "locomotive"}}
+  assert(frame() and pane().tags.production.name == "locomotive")
+  close()
   handler{player_index = player.index, in_gui = true, selected_prototype = {base_type = "item", name = "locomotive", quality = "normal"}}
+  assert(frame() and pane().tags.production.name == "locomotive")
+  close()
   handler{player_index = player.index, in_gui = true, element = mod_gui.get_button_flow(player).todo_manager_open,
     selected_prototype = {base_type = "item", name = "locomotive"}}
+  assert(frame() and pane().tags.production.name == "locomotive")
+  close()
+  local shortcut = assert(script.get_event_handler(defines.events.on_lua_shortcut))
+  shortcut{player_index = player.index, prototype_name = "another-mod-shortcut"}
+  assert(not frame())
+  shortcut{player_index = player.index, prototype_name = "todo-manager-new-task"}
+  assert(frame() and pane().todo_title_row.todo_title.text == "" and not pane().tags.production)
+  local blank = frame()
+  pane().todo_description.text = "Brouillon depuis le raccourci"
+  shortcut{player_index = player.index, prototype_name = "todo-manager-new-task"}
+  assert(frame() == blank and pane().todo_description.text == "Brouillon depuis le raccourci")
+  close()
   assert(not frame() and store.get().next_id == before)
   local kind, name = factopedia.target{base_type = "entity", name = "locomotive"}
   assert(kind == "item" and name == "locomotive")

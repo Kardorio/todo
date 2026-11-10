@@ -1,12 +1,15 @@
 local runtime = require("scripts.runtime")
 local store = require("scripts.storage")
+local editor = require("gui.task_editor")
 local original = assert(script.get_event_handler("todo-manager-add-target"))
-local native_crafting = assert(script.get_event_handler(defines.events.on_pre_player_crafted_item))
 
 script.on_event(defines.events.on_pre_player_crafted_item, function(event)
-  native_crafting(event)
   storage.probe_crafted = event.recipe.name
+  assert(not game.get_player(event.player_index).gui.screen.todo_manager_editor)
   helpers.write_file("todo-native-selected.txt", "native-craft: " .. event.recipe.name .. ";tick=" .. event.tick .. "\n", true)
+  if storage.probe_phase == "craft-input" then
+    storage.probe_phase, storage.probe_capture = "craft-check", game.tick + 30
+  end
 end)
 
 script.on_init(function()
@@ -29,23 +32,19 @@ script.on_event("todo-manager-add-target", function(event)
   if storage.probe_phase == "inventory-input" then
     assert(selected and selected.name == "locomotive" and selected.quality == "normal")
     original(event)
-    assert(not player.gui.screen.todo_manager_editor and store.get().next_id == 1)
-    storage.probe_phase, storage.probe_capture = "craft-capture", game.tick + 30
+    assert(player.gui.screen.todo_manager_editor.todo_editor.tags.production.name == "locomotive")
+    storage.probe_phase, storage.probe_capture = "inventory-result", game.tick + 60
     return
   end
-  if storage.probe_phase == "craft-input" then
-    assert(selected and selected.base_type == "recipe" and selected.name == "iron-chest")
-    original(event)
-    storage.probe_phase, storage.probe_capture = "craft-check", game.tick + 30
-    return
-  end
-  assert(storage.probe_phase == "factopedia-input")
-  assert(selected and selected.name == "locomotive" and not selected.quality)
+  local right = storage.probe_phase == "factopedia-right-input"
+  assert(right or storage.probe_phase == "factopedia-input")
+  local expected = right and "iron-plate" or "locomotive"
+  assert(selected and selected.name == expected)
   original(event)
   local frame = assert(player.gui.screen.todo_manager_editor, "Real shortcut did not open the editor")
-  assert(frame.todo_editor.tags.production.name == "locomotive")
+  assert(frame.todo_editor.tags.production.name == expected)
   assert(not frame.todo_editor.tags.position and store.get().next_id == 1)
-  storage.probe_phase, storage.probe_capture = "result", game.tick + 60
+  storage.probe_phase, storage.probe_capture = right and "result-right" or "result", game.tick + 60
 end)
 
 local function tick(event)
@@ -59,6 +58,13 @@ local function tick(event)
     game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
       path = "todo-native-inventory.png", force_render = true}
     storage.probe_phase = "inventory-input"
+  elseif storage.probe_phase == "inventory-result" and event.tick >= storage.probe_capture then
+    local pane = player.gui.screen.todo_manager_editor.todo_editor
+    if pane.tags.title_translation then return end
+    assert(pane.tags.production.name == "locomotive" and store.get().next_id == 1)
+    editor.close(player)
+    player.opened = player
+    storage.probe_phase, storage.probe_capture = "craft-capture", game.tick + 30
   elseif storage.probe_phase == "craft-capture" and event.tick >= storage.probe_capture then
     game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
       path = "todo-native-crafting.png", force_render = true}
@@ -81,6 +87,20 @@ local function tick(event)
     assert(pane.todo_title_row.todo_title.text == "Locomotive")
     game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
       path = "todo-native-after.png", force_render = true}
+    editor.close(player)
+    player.opened = player
+    player.open_factoriopedia_gui(prototypes.item["iron-gear-wheel"])
+    storage.probe_phase, storage.probe_capture = "right-capture", game.tick + 30
+  elseif storage.probe_phase == "right-capture" and event.tick >= storage.probe_capture then
+    game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
+      path = "todo-native-right-before.png", force_render = true}
+    storage.probe_phase = "factopedia-right-input"
+  elseif storage.probe_phase == "result-right" and event.tick >= storage.probe_capture then
+    local pane = player.gui.screen.todo_manager_editor.todo_editor
+    if pane.tags.title_translation then return end
+    assert(pane.tags.production.name == "iron-plate" and pane.todo_title_row.todo_title.text ~= "iron-plate")
+    game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
+      path = "todo-native-right-after.png", force_render = true}
     helpers.write_file("todo-native-done.txt", "OK", false)
     storage.probe_phase = "done"
   end

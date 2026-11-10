@@ -11,7 +11,15 @@ local colors = {
   IGNORED = {r = 0.55, g = 0.55, b = 0.55}
 }
 
-local function render_list(parent, roots)
+local function maximum_width(player)
+  return math.max(300, math.floor(player.display_resolution.width / player.display_scale - 48))
+end
+
+local function panel_width(player, prefs)
+  return math.max(300, math.min(prefs.panel_width or 380, maximum_width(player)))
+end
+
+local function render_list(parent, roots, width)
   local entries = tasks.tree({}, roots)
   local rows = parent.children
   local rebuild = parent.tags.reminder_layout ~= 3 or #rows ~= #entries
@@ -72,12 +80,13 @@ local function render_list(parent, roots)
       task.description ~= "" and "\n" .. task.description or ""}
     row.todo_title.style.font_color = colors[task.status]
     row.todo_title.style.single_line = true
-    row.todo_title.style.width = 296 - indent
+    row.todo_title.style.width = width - 84 - indent
   end
 end
 
 function M.render(player)
   local prefs = store.player(player.index)
+  local width = panel_width(player, prefs)
   local frame = player.gui.screen.todo_manager_panel
   local roots = {}
   for id, pinned in pairs(prefs.pinned) do
@@ -90,13 +99,24 @@ function M.render(player)
   if not frame then
     frame = player.gui.screen.add{type = "frame", name = "todo_manager_panel", direction = "vertical"}
     local header = common.header(frame, {"todo.pinned"})
+    for _, action in ipairs({"narrow_panel", "widen_panel"}) do
+      local button = common.button(header, action, action == "narrow_panel" and "−" or "+", nil, {"todo." .. action})
+      button.style = "tool_button"
+      button.style.size = {28, 28}
+    end
     common.sprite(header, "toggle_panel", "close", nil, {"todo.hide-panel"})
     local list = frame.add{type = "scroll-pane", name = "todo_panel_tree", direction = "vertical"}
-    list.style.width = 380
     list.style.maximal_height = math.max(150, math.min(400, player.display_resolution.height / player.display_scale - 230))
-    frame.location = common.clamp(player, prefs.panel_location or {x = 12, y = 200}, 416, 460)
+    frame.location = common.clamp(player, prefs.panel_location or {x = 12, y = 200}, width + 36, 460)
   end
-  render_list(frame.todo_panel_tree, roots)
+  frame.todo_panel_tree.style.width = width
+  render_list(frame.todo_panel_tree, roots, width)
+end
+
+function M.change_width(player, delta)
+  local prefs = store.player(player.index)
+  prefs.panel_width = math.max(300, math.min(panel_width(player, prefs) + delta, maximum_width(player)))
+  M.resized(player)
 end
 
 function M.toggle(player)
@@ -115,7 +135,8 @@ function M.resized(player)
   local frame = player.gui.screen.todo_manager_panel
   if frame then
     local prefs = store.player(player.index)
-    prefs.panel_location = common.clamp(player, frame.location, 416, 460)
+    local width = panel_width(player, prefs)
+    prefs.panel_location = common.clamp(player, frame.location, width + 36, 460)
     frame.destroy()
   end
   M.render(player)

@@ -43,6 +43,8 @@ indentées et liens vers la carte ou la Factoriopedia lorsqu'une cible est assoc
 Les icônes occupent deux colonnes fixes ; seuls les titres des sous-tâches sont décalés.
 Les repères `├`, `└` et `│` matérialisent les branches de la hiérarchie.
 La couleur rappelle le statut ; le survol affiche le texte complet et les notes.
+Les boutons `−` et `+` dans l'en-tête ajustent la largeur du rappel ; ce choix
+est conservé par joueur dans la sauvegarde et s'adapte à la taille de l'écran.
 Les actions de gestion restent dans la fenêtre principale, accessible avec `/todo`
 ou l'icône de liste dans la barre des mods. Les branches y sont repliables, tandis que le rappel affiche
 tous les descendants des tâches épinglées. Il disparaît
@@ -184,11 +186,16 @@ Ces prototypes de test ne sont pas inclus dans l'archive distribuable.
 ## Lot 3 : ajout depuis la Factoriopedia
 
 Survoler une icône d'objet, de fluide ou de recette dans la Factoriopedia, puis
-faire **Maj + clic gauche**. Le mod ferme la Factoriopedia et ouvre une nouvelle
+faire **Ctrl + Maj + clic gauche**. Le mod ferme la Factoriopedia et ouvre une nouvelle
 tâche avec son icône et son nom localisé. Le raccourci est configurable dans les
-contrôles Factorio. Les piles d'inventaire sont ignorées et les fabrications
-manuelles gardent leur comportement natif : ce geste ne crée pas de tâche quand
-il sert à transférer une pile ou à lancer une fabrication.
+contrôles Factorio. Le geste fonctionne dans les deux panneaux de la Factopedia,
+dans l'inventaire, dans les interfaces de mods et sur une entité du monde associée
+à un objet de placement unique. Aucune restriction de contexte ou de qualité
+n'est appliquée au prototype survolé. Les gestes natifs avec Maj seul ne changent pas.
+
+Une entrée **Nouvelle tâche** est également disponible dans la configuration de
+la barre de raccourcis Factorio. Son bouton ouvre un formulaire vide, sans objet
+ni position imposés. Il préserve tout brouillon déjà ouvert.
 
 **Enregistrer** crée la tâche et l'épingle pour son créateur. Fermer le formulaire
 l'abandonne. Aucune position n'est capturée automatiquement ; les commandes de
@@ -209,7 +216,7 @@ reste indépendant et ne modifie aucun élément de l'interface interne du jeu.
 Ce lot ajoute un prototype de raccourci : **redémarrer Factorio** après la mise à
 jour. `/c game.reload_mods()` ne recharge pas ce prototype.
 
-Un test supplémentaire exerce le vrai survol et le vrai geste Maj + clic dans un
+Un test supplémentaire exerce le vrai survol et le vrai geste Ctrl + Maj + clic dans un
 écran virtuel isolé, avec le client autonome, Xvfb et xdotool :
 
 ```sh
@@ -219,6 +226,6 @@ python3 tests/factopedia_native.py
 Définir `FACTORIO_GUI_BIN` ou `XVFB_BIN` si ces exécutables ne sont pas aux
 emplacements par défaut. Le test utilise une résolution de 1280 × 900 et une
 échelle de 125 % pour viser l'icône de locomotive de la grille native Factorio 2.1.
-Il vérifie d'abord qu'une pile d'inventaire et une fabrication manuelle ne créent
-pas de tâche, puis le prototype réellement transmis depuis la Factopedia. Il produit les captures
+Il vérifie l'ajout depuis une pile d'inventaire, la fabrication native avec Maj seul,
+puis l'ajout depuis la grille gauche et un ingrédient à droite dans la Factopedia. Il produit les captures
 `todo-native-before.png` et `todo-native-after.png` dans `tests/visual-output/`.
