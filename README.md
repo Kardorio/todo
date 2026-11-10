@@ -10,7 +10,7 @@ un raccourci de création depuis les prototypes survolés dans la Factoriopedia.
 - `/todo Augmenter les fondeurs` crée une tâche à la position actuelle du
   contrôleur, y compris sur la surface consultée en vue distante. Elle est
   automatiquement épinglée pour son créateur.
-- `/todo` ou le bouton **Tâches** ouvre la fenêtre complète.
+- `/todo` ou l'icône de liste dans la barre commune des mods ouvre la fenêtre complète.
 - Le bouton **+** de la fenêtre crée une tâche principale. Celui d'une ligne
   prépare une sous-tâche. Les tâches créées dans la fenêtre n'ont pas de position
   par défaut.
@@ -44,14 +44,15 @@ Les icônes occupent deux colonnes fixes ; seuls les titres des sous-tâches son
 Les repères `├`, `└` et `│` matérialisent les branches de la hiérarchie.
 La couleur rappelle le statut ; le survol affiche le texte complet et les notes.
 Les actions de gestion restent dans la fenêtre principale, accessible avec `/todo`
-ou le bouton **Tâches**. Les branches y sont repliables, tandis que le rappel affiche
+ou l'icône de liste dans la barre des mods. Les branches y sont repliables, tandis que le rappel affiche
 tous les descendants des tâches épinglées. Il disparaît
 automatiquement lorsqu'aucune tâche existante n'est épinglée, puis réapparaît dès
 qu'une tâche est épinglée si sa visibilité est activée. Les épingles
 et branches repliées de la fenêtre principale sont propres à chaque joueur. Le bouton d'épingle d'une ligne
 ajoute ou retire cette tâche du panneau. Épingler un enfant déjà visible sous un
 ancêtre épinglé ne le duplique pas. La barre de titre permet de déplacer le
-panneau ; sa croix le masque. Le bouton d'épingle en haut de l'écran le réaffiche.
+panneau ; sa croix le masque. Le bouton d'épingle de la fenêtre de gestion permet
+de le réafficher ou de le masquer ; aucun bouton d'épingle n'est ajouté à la barre des mods.
 La position et la visibilité du panneau sont conservées par joueur.
 
 Toutes les tâches sont partagées dans la partie, y compris entre forces. Le
@@ -183,9 +184,11 @@ Ces prototypes de test ne sont pas inclus dans l'archive distribuable.
 ## Lot 3 : ajout depuis la Factoriopedia
 
 Survoler une icône d'objet, de fluide ou de recette dans la Factoriopedia, puis
-appuyer sur **Ctrl + Maj + T**. Le mod ferme la Factoriopedia et ouvre une nouvelle
+faire **Maj + clic gauche**. Le mod ferme la Factoriopedia et ouvre une nouvelle
 tâche avec son icône et son nom localisé. Le raccourci est configurable dans les
-contrôles Factorio ; il fonctionne aussi sur les icônes d'inventaire et de recettes.
+contrôles Factorio. Les piles d'inventaire sont ignorées et les fabrications
+manuelles gardent leur comportement natif : ce geste ne crée pas de tâche quand
+il sert à transférer une pile ou à lancer une fabrication.
 
 **Enregistrer** crée la tâche et l'épingle pour son créateur. Fermer le formulaire
 l'abandonne. Aucune position n'est capturée automatiquement ; les commandes de
@@ -206,7 +209,7 @@ reste indépendant et ne modifie aucun élément de l'interface interne du jeu.
 Ce lot ajoute un prototype de raccourci : **redémarrer Factorio** après la mise à
 jour. `/c game.reload_mods()` ne recharge pas ce prototype.
 
-Un test supplémentaire exerce le vrai survol et la vraie frappe clavier dans un
+Un test supplémentaire exerce le vrai survol et le vrai geste Maj + clic dans un
 écran virtuel isolé, avec le client autonome, Xvfb et xdotool :
 
 ```sh
@@ -216,5 +219,6 @@ python3 tests/factopedia_native.py
 Définir `FACTORIO_GUI_BIN` ou `XVFB_BIN` si ces exécutables ne sont pas aux
 emplacements par défaut. Le test utilise une résolution de 1280 × 900 et une
 échelle de 125 % pour viser l'icône de locomotive de la grille native Factorio 2.1.
-Il vérifie le prototype réellement transmis et produit les captures
+Il vérifie d'abord qu'une pile d'inventaire et une fabrication manuelle ne créent
+pas de tâche, puis le prototype réellement transmis depuis la Factopedia. Il produit les captures
 `todo-native-before.png` et `todo-native-after.png` dans `tests/visual-output/`.

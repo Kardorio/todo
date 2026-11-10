@@ -64,7 +64,7 @@ local function tick(event)
     storage.todo_visual_phase = 6
   elseif storage.todo_visual_phase == 6 and event.tick >= 250 then
     storage.todo_visual_next_id = store.get().next_id
-    runtime.from_hover{player_index = player.index, selected_prototype = {base_type = "item", name = "locomotive"}}
+    runtime.from_hover{player_index = player.index, in_gui = true, selected_prototype = {base_type = "item", name = "locomotive"}}
     storage.todo_visual_phase = 7
   elseif storage.todo_visual_phase == 7 and event.tick >= 310 then
     local pane = player.gui.screen.todo_manager_editor.todo_editor

@@ -2,6 +2,7 @@ local runtime = require("scripts.runtime")
 local tasks = require("scripts.task_manager")
 local store = require("scripts.storage")
 local factopedia = require("integrations.factopedia")
+local mod_gui = require("mod-gui")
 
 local function find(root, name)
   if root.name == name then return root end
@@ -13,13 +14,13 @@ end
 
 return function(player)
   local input = assert(prototypes.custom_input["todo-manager-add-target"])
-  assert(input.include_selected_prototype and input.key_sequence == "CONTROL + SHIFT + T")
+  assert(input.include_selected_prototype and input.key_sequence == "SHIFT + mouse-button-1")
   local handler = assert(script.get_event_handler("todo-manager-add-target"))
   assert(handler == runtime.from_hover)
   local function frame() return player.gui.screen.todo_manager_editor end
   local function pane() return frame().todo_editor end
   local function invoke(kind, name)
-    handler{player_index = player.index, selected_prototype = kind and {base_type = kind, name = name} or nil}
+    handler{player_index = player.index, in_gui = true, selected_prototype = kind and {base_type = kind, name = name} or nil}
   end
   local function close()
     runtime.closed{player_index = player.index, element = frame()}
@@ -28,6 +29,26 @@ return function(player)
   invoke()
   invoke("technology", "automation")
   invoke("item", "todo-unknown-prototype")
+  assert(not frame() and store.get().next_id == before)
+  player.opened = player
+  runtime.crafting_queued{player_index = player.index, recipe = {name = "todo-test-alpha"}}
+  invoke("recipe", "todo-test-alpha")
+  assert(not frame() and not store.player(player.index).pending_hover)
+  store.player(player.index).native_crafts = nil
+  invoke("recipe", "todo-test-alpha")
+  assert(not frame() and store.player(player.index).pending_hover)
+  runtime.crafting_queued{player_index = player.index, recipe = {name = "todo-test-alpha"}}
+  runtime.translation_tick{tick = game.tick + 1}
+  assert(not frame() and not store.player(player.index).pending_hover)
+  store.player(player.index).native_crafts = nil
+  invoke("recipe", "todo-test-alpha")
+  runtime.translation_tick{tick = game.tick + 1}
+  assert(frame() and pane().tags.production.recipe == "todo-test-alpha")
+  close()
+  handler{player_index = player.index, in_gui = false, selected_prototype = {base_type = "item", name = "locomotive"}}
+  handler{player_index = player.index, in_gui = true, selected_prototype = {base_type = "item", name = "locomotive", quality = "normal"}}
+  handler{player_index = player.index, in_gui = true, element = mod_gui.get_button_flow(player).todo_manager_open,
+    selected_prototype = {base_type = "item", name = "locomotive"}}
   assert(not frame() and store.get().next_id == before)
   local kind, name = factopedia.target{base_type = "entity", name = "locomotive"}
   assert(kind == "item" and name == "locomotive")

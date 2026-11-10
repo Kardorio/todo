@@ -10,6 +10,7 @@ local common = require("gui.common")
 local production_checks = require("production_checks")
 local production_gui_checks = require("production_gui_checks")
 local factopedia_checks = require("factopedia_checks")
+local mod_gui = require("mod-gui")
 local loaded = false
 
 local function find(root, name)
@@ -52,6 +53,7 @@ local function run_checks()
     on_gui_elem_changed = runtime.production_changed, on_gui_selection_state_changed = runtime.production_changed,
     on_gui_text_changed = runtime.production_changed,
     on_string_translated = runtime.translated,
+    on_pre_player_crafted_item = runtime.crafting_queued,
     on_gui_location_changed = runtime.moved, on_player_display_resolution_changed = runtime.resized,
     on_player_display_scale_changed = runtime.resized, on_surface_deleted = runtime.refresh
   }
@@ -87,7 +89,19 @@ local function run_checks()
   local function tree() return frame().todo_tree end
   local function panel() return player.gui.screen.todo_manager_panel end
   assert(not panel())
-  click(player.gui.top.todo_manager_toggle_panel)
+  local open_button = mod_gui.get_button_flow(player).todo_manager_open
+  assert(not player.gui.top.todo_manager_open and not player.gui.top.todo_manager_toggle_panel)
+  assert(open_button.type == "sprite-button" and open_button.style.name == mod_gui.button_style)
+  assert(helpers.is_valid_sprite_path(open_button.sprite))
+  local shared_buttons = mod_gui.get_button_flow(player)
+  assert(not shared_buttons.todo_manager_toggle_panel)
+  local peer = shared_buttons.add{type = "sprite-button", name = "todo_test_peer", style = mod_gui.button_style,
+    sprite = "item/iron-plate"}
+  runtime.player_created{player_index = player.index}
+  assert(peer.valid and peer.parent == open_button.parent and open_button.valid)
+  peer.destroy()
+  click(open_button)
+  click(find(frame(), "todo_toggle_panel"))
   assert(panel() and prefs.panel_visible)
   assert(#panel().todo_panel_tree.children == 2, "Reminder must show children even if the management tree is collapsed")
   local reminder = panel()
@@ -96,7 +110,7 @@ local function run_checks()
   click(reminder.todo_panel_tree.task_1.todo_show_factoriopedia)
   assert(panel() == reminder and tasks.get(1).revision == revision)
   player.close_factoriopedia_gui()
-  click(player.gui.top.todo_manager_open)
+  click(open_button)
   assert(frame() and not edit_frame() and not frame().todo_content)
   assert(tree().task_1 and not tree().task_2)
   click(tree().task_1.todo_collapse)
@@ -284,9 +298,9 @@ local function run_checks()
   panel().location = {x = 42, y = 99}
   runtime.moved{player_index = player.index, element = panel()}
   assert(prefs.panel_location.x == 42 and prefs.panel_location.y == 99)
-  click(player.gui.top.todo_manager_toggle_panel)
+  click(find(frame(), "todo_toggle_panel"))
   assert(not panel() and not prefs.panel_visible)
-  click(player.gui.top.todo_manager_toggle_panel)
+  click(find(frame(), "todo_toggle_panel"))
   assert(panel().location.x == 42 and panel().location.y == 99)
   local other = store.player(987654)
   assert(other.panel_visible and not other.pinned[root.id] and not other.collapsed[1])
@@ -321,11 +335,13 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 14)
+    assert(store.get().gui_revision == 15)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)
     assert(not player.gui.screen.todo_manager_target_picker and not store.player(1).target_picker)
+    assert(not player.gui.top.todo_manager_open and not player.gui.top.todo_manager_toggle_panel)
+    assert(mod_gui.get_button_flow(player).todo_manager_open.type == "sprite-button")
     assert(store.player(1).panel_visible and tasks.get(1).title == "Persistence fixture")
     log("TODO_UI_RELOAD_OK")
     log("TODO_RUNTIME_OK")
@@ -354,6 +370,8 @@ script.on_nth_tick(1, function()
   old_window.add{type = "flow", name = "todo_content"}
   player.gui.screen.add{type = "frame", name = "todo_manager_target_picker"}
   store.player(1).target_picker = {entries = {{kind = "item", name = "iron-plate"}}}
+  player.gui.top.add{type = "button", name = "todo_manager_open", caption = "Legacy tasks"}
+  player.gui.top.add{type = "button", name = "todo_manager_toggle_panel", caption = "Legacy pin"}
   store.get().gui_revision = nil
   storage.todo_smoke_gui_reloaded = true
   game.reload_mods()

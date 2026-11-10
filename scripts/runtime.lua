@@ -8,7 +8,7 @@ local locations = require("scripts.location_manager")
 local selector = require("gui.production_selector")
 local factopedia = require("integrations.factopedia")
 local M = {}
-local gui_revision = 14
+local gui_revision = 15
 
 local function open_list(player)
   selector.close(player)
@@ -36,7 +36,8 @@ end
 function M.initialize()
   store.initialize().gui_revision = gui_revision
   for _, player in pairs(game.players) do
-    store.player(player.index)
+    local prefs = store.player(player.index)
+    prefs.pending_hover, prefs.native_crafts = nil, nil
     window.ensure_button(player)
     local old = player.gui.screen.todo_manager_window
     if old then
@@ -74,7 +75,8 @@ function M.player_created(event)
   M.ensure_ready()
   local player = game.get_player(event.player_index)
   if not player then return end
-  store.player(player.index)
+  local prefs = store.player(player.index)
+  prefs.pending_hover, prefs.native_crafts = nil, nil
   window.ensure_button(player)
   render(player)
 end
@@ -98,12 +100,7 @@ function M.command(command)
   M.refresh()
 end
 
-function M.from_hover(event)
-  M.ensure_ready()
-  local player = game.get_player(event.player_index)
-  if not player then return end
-  local kind, name, err = factopedia.target(event.selected_prototype)
-  if not kind then player.print({"todo.error-" .. err}) return end
+local function open_hover_target(player, kind, name)
   if player.gui.screen.todo_manager_editor or player.gui.screen.todo_manager_production then
     editor.error(player, "draft_open")
     player.print({"todo.error-draft_open"})
@@ -112,6 +109,39 @@ function M.from_hover(event)
   player.close_factoriopedia_gui()
   open_editor(player)
   editor.set_target(player, kind, name)
+end
+
+function M.from_hover(event)
+  M.ensure_ready()
+  local player = game.get_player(event.player_index)
+  if not player then return end
+  -- Stack and quality-aware slots already use Shift-click for transfers.
+  if not event.in_gui or event.element or not event.selected_prototype or event.selected_prototype.quality then return end
+  local kind, name, err = factopedia.target(event.selected_prototype)
+  if not kind then
+    if err ~= "unsupported_hovered_target" then player.print({"todo.error-" .. err}) end
+    return
+  end
+  if kind == "recipe" and player.opened_gui_type == defines.gui_type.controller then
+    local prefs = store.player(player.index)
+    local crafts = prefs.native_crafts
+    if crafts and crafts.tick == game.tick and crafts.recipes[name] then return end
+    -- Native crafting and the custom input may be delivered in either order.
+    prefs.pending_hover = {kind = kind, name = name, tick = game.tick}
+    return
+  end
+  open_hover_target(player, kind, name)
+end
+
+function M.crafting_queued(event)
+  M.ensure_ready()
+  local prefs = store.player(event.player_index)
+  if not prefs.native_crafts or prefs.native_crafts.tick ~= game.tick then
+    prefs.native_crafts = {tick = game.tick, recipes = {}}
+  end
+  prefs.native_crafts.recipes[event.recipe.name] = true
+  local pending = prefs.pending_hover
+  if pending and pending.tick == game.tick and pending.name == event.recipe.name then prefs.pending_hover = nil end
 end
 
 local function event_context(event)
@@ -215,9 +245,18 @@ function M.translated(event)
   editor.translated(event)
 end
 
-function M.translation_tick()
+function M.translation_tick(event)
   M.ensure_ready()
-  for _, player in pairs(game.connected_players) do editor.retry_translation(player) end
+  for _, player in pairs(game.connected_players) do
+    editor.retry_translation(player)
+    local prefs = store.player(player.index)
+    local pending = prefs.pending_hover
+    if pending and pending.tick < (event and event.tick or game.tick) then
+      prefs.pending_hover = nil
+      open_hover_target(player, pending.kind, pending.name)
+    end
+    if prefs.native_crafts and prefs.native_crafts.tick < game.tick then prefs.native_crafts = nil end
+  end
 end
 
 function M.moved(event)

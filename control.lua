@@ -22,3 +22,4 @@ script.on_event(defines.events.on_surface_deleted, runtime.refresh)
 
 commands.add_command("todo", {"todo.command-help"}, runtime.command)
 script.on_event("todo-manager-add-target", runtime.from_hover)
+script.on_event(defines.events.on_pre_player_crafted_item, runtime.crafting_queued)
