@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from capture_helpers import complete_png
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
@@ -54,7 +55,7 @@ def main():
             raise RuntimeError(created.stdout[-8000:])
         log_path = output / "visual.log"
         marker = write / "script-output/todo-visual-result.txt"
-        names = ("todo-reminder.png", "todo-management.png")
+        names = ("todo-reminder.png", "todo-management.png", "todo-factopedia.png", "todo-from-factopedia.png")
         with log_path.open("w") as log:
             process = subprocess.Popen(base + ["--window-size", "1280x900", "--force-graphics-preset", "very-low",
                                                "--load-game", str(work / "test.zip")], env=env,
@@ -62,7 +63,7 @@ def main():
             try:
                 deadline = time.monotonic() + 60
                 while time.monotonic() < deadline:
-                    if marker.exists() and all((write / "script-output" / name).is_file() for name in names):
+                    if marker.exists() and all(complete_png(write / "script-output" / name) for name in names):
                         break
                     if process.poll() is not None:
                         break
@@ -79,7 +80,7 @@ def main():
             raise RuntimeError(log_path.read_text()[-8000:])
         for name in names:
             source = write / "script-output" / name
-            if not source.is_file() or source.stat().st_size < 1000:
+            if not complete_png(source):
                 raise RuntimeError(f"Capture absente : {name}")
             shutil.copy2(source, output / name)
             print(output / name)

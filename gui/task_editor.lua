@@ -208,6 +208,11 @@ function M.production_changed(player, element)
   end
 end
 
+function M.set_target(player, kind, name)
+  local pane = holder(player)
+  if pane then production_fields.set_target(pane, player, kind, name) end
+end
+
 function M.translated(event)
   local player = game.get_player(event.player_index)
   local pane = player and holder(player)

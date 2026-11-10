@@ -21,3 +21,4 @@ script.on_event(defines.events.on_player_display_scale_changed, runtime.resized)
 script.on_event(defines.events.on_surface_deleted, runtime.refresh)
 
 commands.add_command("todo", {"todo.command-help"}, runtime.command)
+script.on_event("todo-manager-add-target", runtime.from_hover)

@@ -2,8 +2,8 @@
 
 Gestionnaire de tâches indépendant pour **Factorio 2.1**, sans dépendance à un
 service externe ni à un mod de contenu. La V1 gère les tâches ; le lot 2 ajoute
-les objectifs de production et leur décomposition progressive. Le panneau de rappel
-permet d'ouvrir la Factoriopedia ; l'ajout de tâches depuis celle-ci reste prévu au lot 3.
+les objectifs de production et leur décomposition progressive. Le lot 3 ajoute
+un raccourci de création depuis les prototypes survolés dans la Factoriopedia.
 
 ## Utilisation
 
@@ -117,8 +117,9 @@ moteur Steam n'est lancé. `FACTORIO_BIN` est obligatoire pour ce test.
 
 Le test graphique utilise un client autonome Factorio 2.1, avec rendu hors écran
 et profil temporaire, sans démarrer Steam ni utiliser les sauvegardes du joueur.
-Il produit deux vraies captures dans `tests/visual-output/` : le rappel compact
-et la fenêtre de gestion. Sans variable `FACTORIO_GUI_BIN`, il cherche le client
+Il produit quatre vraies captures dans `tests/visual-output/` : le rappel compact,
+la fenêtre de gestion, la Factoriopedia et le formulaire prérempli.
+Sans variable `FACTORIO_GUI_BIN`, il cherche le client
 dans `.tools/factorio-standalone/bin/x64/factorio`.
 Une session avec plusieurs clients et le transfert d'une
 sauvegarde sur un autre ordinateur ne sont pas couverts par le test moteur.
@@ -179,4 +180,41 @@ vérifient la sélection, les quantités, les doublons, les conflits, le dévelo
 progressif et le passage d'une véritable sauvegarde V1 au nouveau schéma.
 Ces prototypes de test ne sont pas inclus dans l'archive distribuable.
 
-L'ajout de tâches depuis la Factoriopedia reste prévu pour le lot 3.
+## Lot 3 : ajout depuis la Factoriopedia
+
+Survoler une icône d'objet, de fluide ou de recette dans la Factoriopedia, puis
+appuyer sur **Ctrl + Maj + T**. Le mod ferme la Factoriopedia et ouvre une nouvelle
+tâche avec son icône et son nom localisé. Le raccourci est configurable dans les
+contrôles Factorio ; il fonctionne aussi sur les icônes d'inventaire et de recettes.
+
+**Enregistrer** crée la tâche et l'épingle pour son créateur. Fermer le formulaire
+l'abandonne. Aucune position n'est capturée automatiquement ; les commandes de
+géolocalisation de l'éditeur permettent de l'ajouter. Un formulaire de tâche ou de
+décomposition déjà ouvert est conservé et le nouvel ajout est refusé.
+
+Une recette survolée explicitement est conservée. Pour un objet ou un fluide, les
+règles habituelles s'appliquent : recette unique sélectionnée directement, choix
+manuel en cas d'alternatives. Une entité est convertie vers son objet de placement
+uniquement s'il est unique ; aucun objet n'est choisi en cas d'ambiguïté.
+
+L'API ne fournit pas la page Factoriopedia active ni d'ancrage pour y injecter un
+bouton. L'intégration utilise le [prototype survolé fourni aux raccourcis](https://lua-api.factorio.com/latest/prototypes/CustomInputPrototype.html#include_selected_prototype),
+pas la page entière : il faut viser une icône. Le contexte recette ne peut être
+conservé que si l'icône survolée est elle-même une recette. Le module d'intégration
+reste indépendant et ne modifie aucun élément de l'interface interne du jeu.
+
+Ce lot ajoute un prototype de raccourci : **redémarrer Factorio** après la mise à
+jour. `/c game.reload_mods()` ne recharge pas ce prototype.
+
+Un test supplémentaire exerce le vrai survol et la vraie frappe clavier dans un
+écran virtuel isolé, avec le client autonome, Xvfb et xdotool :
+
+```sh
+python3 tests/factopedia_native.py
+```
+
+Définir `FACTORIO_GUI_BIN` ou `XVFB_BIN` si ces exécutables ne sont pas aux
+emplacements par défaut. Le test utilise une résolution de 1280 × 900 et une
+échelle de 125 % pour viser l'icône de locomotive de la grille native Factorio 2.1.
+Il vérifie le prototype réellement transmis et produit les captures
+`todo-native-before.png` et `todo-native-after.png` dans `tests/visual-output/`.

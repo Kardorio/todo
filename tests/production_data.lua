@@ -6,6 +6,16 @@ for _, name in ipairs(names) do
     subgroup = "intermediate-product", stack_size = 100}}
 end
 
+local building = table.deepcopy(data.raw.container["iron-chest"])
+building.name = "todo-test-building"
+building.minable.result = "todo-test-building-a"
+data:extend{building}
+for _, suffix in ipairs({"a", "b"}) do
+  data:extend{{type = "item", name = "todo-test-building-" .. suffix,
+    icon = "__base__/graphics/icons/iron-chest.png", icon_size = 64,
+    subgroup = "storage", stack_size = 50, place_result = "todo-test-building"}}
+end
+
 data:extend{{
   type = "fluid", name = "todo-test-fluid", icon = "__base__/graphics/icons/fluid/water.png", icon_size = 64,
   localised_name = {"", "Test fluid"},

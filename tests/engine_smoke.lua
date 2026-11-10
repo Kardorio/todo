@@ -9,6 +9,7 @@ local tree_renderer = require("gui.task_tree")
 local common = require("gui.common")
 local production_checks = require("production_checks")
 local production_gui_checks = require("production_gui_checks")
+local factopedia_checks = require("factopedia_checks")
 local loaded = false
 
 local function find(root, name)
@@ -320,7 +321,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 13)
+    assert(store.get().gui_revision == 14)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)
@@ -343,6 +344,7 @@ script.on_nth_tick(1, function()
   local ok, err = locations.navigate(game.get_player(1), task)
   assert(not ok and err == "missing_surface")
   production_gui_checks(player)
+  factopedia_checks(player)
   store.player(1).pinned = {}
   local old_panel = player.gui.screen.todo_manager_panel
   old_panel.todo_panel_tree.clear()

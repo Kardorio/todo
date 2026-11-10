@@ -12,7 +12,7 @@ import zipfile
 from validate import validate
 
 ROOT = Path(__file__).resolve().parents[1]
-FILES = ("info.json", "control.lua", "scripts", "gui", "integrations", "locale")
+FILES = ("info.json", "data.lua", "control.lua", "scripts", "gui", "integrations", "locale")
 
 
 def metadata():
@@ -31,7 +31,7 @@ def stage(destination):
 
 def test(binary):
     validate()
-    subprocess.run([sys.executable, str(ROOT / "tests/test_build.py")], check=True)
+    subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", str(ROOT / "tests"), "-p", "test_*.py"], check=True)
     if not binary:
         raise SystemExit("Définir FACTORIO_BIN vers un moteur autonome Factorio 2.1.")
     binary = Path(binary).expanduser().resolve()
@@ -50,7 +50,7 @@ def test(binary):
         target = mods / "todo-manager"
         stage(target)
         shutil.copy2(ROOT / "tests/engine_smoke.lua", target / "engine_smoke.lua")
-        for name in ("model_checks", "production_checks", "production_gui_checks"):
+        for name in ("model_checks", "production_checks", "production_gui_checks", "factopedia_checks"):
             shutil.copy2(ROOT / "tests" / f"{name}.lua", target / f"{name}.lua")
         fixture = mods / "todo-production-fixtures"
         fixture.mkdir()
@@ -75,7 +75,7 @@ def test(binary):
         save = work / "test.zip"
         steps = [
             (["--create", str(save)], ("TODO_STORAGE_WRITTEN",)),
-            (["--test-save", str(save), "--test-ticks", "5"], ("TODO_RELOAD_OK", "TODO_MODEL_OK", "TODO_PRODUCTION_OK", "TODO_PRODUCTION_GUI_OK", "TODO_UI_RELOAD_OK", "TODO_RUNTIME_OK")),
+            (["--test-save", str(save), "--test-ticks", "5"], ("TODO_RELOAD_OK", "TODO_MODEL_OK", "TODO_PRODUCTION_OK", "TODO_PRODUCTION_GUI_OK", "TODO_FACTOPEDIA_OK", "TODO_UI_RELOAD_OK", "TODO_RUNTIME_OK")),
         ]
         for arguments, markers in steps:
             result = subprocess.run(common + arguments, env=env, text=True, stdout=subprocess.PIPE,

@@ -51,7 +51,7 @@ function M.open(player)
   if not frame then
     frame = player.gui.screen.add{type = "frame", name = window_name, direction = "vertical"}
     local header = common.header(frame, {"todo.title"})
-    common.sprite(header, "new", "add", nil, {"todo.new"})
+    common.sprite(header, "new", "add", nil, {"todo.new-help"})
     common.sprite(header, "toggle_panel", "track_button", nil, {"todo.toggle-panel"})
     common.sprite(header, "close", "close", nil, {"todo.close"})
     frame.add{type = "scroll-pane", name = "todo_tree", direction = "vertical"}

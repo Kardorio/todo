@@ -8,7 +8,7 @@ local locations = require("scripts.location_manager")
 local selector = require("gui.production_selector")
 local factopedia = require("integrations.factopedia")
 local M = {}
-local gui_revision = 13
+local gui_revision = 14
 
 local function open_list(player)
   selector.close(player)
@@ -96,6 +96,22 @@ function M.command(command)
   store.player(player.index).pinned[task.id] = true
   player.print({"todo.created", task.id, task.title})
   M.refresh()
+end
+
+function M.from_hover(event)
+  M.ensure_ready()
+  local player = game.get_player(event.player_index)
+  if not player then return end
+  local kind, name, err = factopedia.target(event.selected_prototype)
+  if not kind then player.print({"todo.error-" .. err}) return end
+  if player.gui.screen.todo_manager_editor or player.gui.screen.todo_manager_production then
+    editor.error(player, "draft_open")
+    player.print({"todo.error-draft_open"})
+    return
+  end
+  player.close_factoriopedia_gui()
+  open_editor(player)
+  editor.set_target(player, kind, name)
 end
 
 local function event_context(event)

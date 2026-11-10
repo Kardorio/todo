@@ -1,6 +1,7 @@
 local runtime = require("scripts.runtime")
 local tasks = require("scripts.task_manager")
 local store = require("scripts.storage")
+local window = require("gui.main_window")
 
 script.on_init(function()
   runtime.initialize()
@@ -52,6 +53,27 @@ local function tick(event)
   elseif storage.todo_visual_phase == 3 and event.tick >= 160 then
     game.take_screenshot{player = player, position = {0, 0}, resolution = {1280, 900}, zoom = 1,
       show_gui = true, path = "todo-management.png", force_render = true}
+    storage.todo_visual_phase = 4
+  elseif storage.todo_visual_phase == 4 and event.tick >= 190 then
+    window.close(player)
+    player.open_factoriopedia_gui(prototypes.item.locomotive)
+    storage.todo_visual_phase = 5
+  elseif storage.todo_visual_phase == 5 and event.tick >= 220 then
+    game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
+      path = "todo-factopedia.png", force_render = true}
+    storage.todo_visual_phase = 6
+  elseif storage.todo_visual_phase == 6 and event.tick >= 250 then
+    storage.todo_visual_next_id = store.get().next_id
+    runtime.from_hover{player_index = player.index, selected_prototype = {base_type = "item", name = "locomotive"}}
+    storage.todo_visual_phase = 7
+  elseif storage.todo_visual_phase == 7 and event.tick >= 310 then
+    local pane = player.gui.screen.todo_manager_editor.todo_editor
+    if pane.tags.title_translation then return end
+    assert(pane.tags.production.name == "locomotive" and not pane.tags.position)
+    assert(pane.todo_title_row.todo_title.text ~= "locomotive")
+    assert(store.get().next_id == storage.todo_visual_next_id)
+    game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
+      path = "todo-from-factopedia.png", force_render = true}
     helpers.write_file("todo-visual-result.txt", "TODO VISUAL OK\n", false)
     storage.todo_visual_phase = nil
   end
