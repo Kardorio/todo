@@ -14,13 +14,17 @@ local colors = {
 local function render_list(parent, roots)
   local entries = tasks.tree({}, roots)
   local rows = parent.children
-  local rebuild = parent.tags.reminder_layout ~= 2 or #rows ~= #entries
+  local rebuild = parent.tags.reminder_layout ~= 3 or #rows ~= #entries
   if not rebuild then
     for index, entry in ipairs(entries) do
       if rows[index].name ~= "task_" .. entry.task.id then rebuild = true break end
     end
   end
-  if rebuild then parent.clear() parent.tags = {reminder_layout = 2} end
+  if rebuild then parent.clear() parent.tags = {reminder_layout = 3} end
+  local last_children, continuation = {}, {}
+  for _, entry in ipairs(entries) do
+    if entry.depth > 0 then last_children[entry.task.parent_id] = entry.task.id end
+  end
   for _, entry in ipairs(entries) do
     local task = entry.task
     local row = parent["task_" .. task.id]
@@ -35,11 +39,21 @@ local function render_list(parent, roots)
       common.sprite(row, "show_factoriopedia", "change_recipe", task.id)
       local target_space = row.add{type = "empty-widget", name = "todo_target_space"}
       target_space.style.width = 28
-      row.add{type = "empty-widget", name = "todo_indent"}
+      local branches = row.add{type = "flow", name = "todo_indent", direction = "horizontal"}
+      branches.style.horizontal_spacing = 0
       row.add{type = "label", name = "todo_title"}
     end
     local indent = math.min(entry.depth * 24, 96)
     row.todo_indent.style.width = indent
+    row.todo_indent.clear()
+    continuation[entry.depth] = entry.depth > 0 and last_children[task.parent_id] ~= task.id
+    for level = math.max(1, entry.depth - 3), entry.depth do
+      local caption = level == entry.depth and (continuation[level] and "├" or "└")
+        or (continuation[level] and "│" or "")
+      local branch = row.todo_indent.add{type = "label", name = "level_" .. level, caption = caption}
+      branch.style.width = 24
+      branch.style.font_color = {r = 0.65, g = 0.65, b = 0.65}
+    end
     local located = task.position ~= nil and task.surface_index ~= nil
     row.todo_show_location.visible = located
     row.todo_location_space.visible = not located

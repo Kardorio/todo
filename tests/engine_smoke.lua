@@ -132,6 +132,8 @@ local function run_checks()
   local compact_child = panel().todo_panel_tree.task_2
   assert(compact_root.todo_title.type == "label" and compact_child.todo_title.type == "label")
   assert(compact_child.todo_indent.style.minimal_width == compact_root.todo_indent.style.minimal_width + 24)
+  assert(#compact_root.todo_indent.children == 0)
+  assert(compact_child.todo_indent.level_1.caption == "└")
   local reminder_root_columns = column_offsets(compact_root)
   local reminder_child_columns = column_offsets(compact_child)
   assert(reminder_root_columns.todo_show_location == reminder_child_columns.todo_location_space)
@@ -318,7 +320,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 12)
+    assert(store.get().gui_revision == 13)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)

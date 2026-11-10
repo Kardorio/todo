@@ -26,6 +26,7 @@ local function tick(event)
     assert(tasks.update(locomotive.id, {production = {type = "item", name = "locomotive", recipe = "locomotive"}}))
     local engines = assert(tasks.create("Renforcer la production de moteurs", player, game.tick, locomotive.id, false))
     assert(tasks.update(engines.id, {status = "IN_PROGRESS", production = {type = "item", name = "engine-unit"}}))
+    local gears = assert(tasks.create("Assembler les engrenages", player, game.tick, engines.id, false))
     local steel = assert(tasks.create("Prévoir un stock d'acier", player, game.tick, locomotive.id, false))
     assert(tasks.update(steel.id, {status = "DONE"}))
     local station = assert(tasks.create("Construire la gare de ravitaillement", player, game.tick))
@@ -35,6 +36,11 @@ local function tick(event)
     prefs.panel_visible = true
     prefs.panel_location = {x = 36, y = 110}
     runtime.refresh()
+    local rows = player.gui.screen.todo_manager_panel.todo_panel_tree
+    assert(rows["task_" .. engines.id].todo_indent.level_1.caption == "├")
+    assert(rows["task_" .. gears.id].todo_indent.level_1.caption == "│")
+    assert(rows["task_" .. gears.id].todo_indent.level_2.caption == "└")
+    assert(rows["task_" .. steel.id].todo_indent.level_1.caption == "└")
     storage.todo_visual_phase = 1
   elseif storage.todo_visual_phase == 1 and event.tick >= 100 then
     game.take_screenshot{player = player, position = {0, 0}, resolution = {1280, 900}, zoom = 1,
