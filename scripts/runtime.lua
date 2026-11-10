@@ -8,7 +8,7 @@ local locations = require("scripts.location_manager")
 local selector = require("gui.production_selector")
 local factopedia = require("integrations.factopedia")
 local M = {}
-local gui_revision = 18
+local gui_revision = 19
 
 local function open_list(player)
   selector.close(player)

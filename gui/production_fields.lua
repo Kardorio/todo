@@ -3,6 +3,18 @@ local production = require("scripts.production_manager")
 local tasks = require("scripts.task_manager")
 local M = {}
 
+function M.element(pane)
+  return pane.parent.todo_production or pane.todo_production
+end
+
+local function host(pane, player)
+  return player.display_resolution.width / player.display_scale >= 960 and pane.parent or pane
+end
+
+local function ingredient_height(player)
+  return math.max(120, math.min(360, player.display_resolution.height / player.display_scale - 260))
+end
+
 local function set_draft(pane, value)
   local tags = pane.tags
   tags.production = value or false
@@ -16,12 +28,12 @@ function M.read(pane)
 end
 
 function M.refresh_info(pane)
-  local row = pane.todo_production.todo_recipe_row
+  local row = M.element(pane).todo_recipe_row
   row.todo_recipe_info.visible = row.visible and tasks.has_children(pane.tags.task_id)
 end
 
 function M.refresh(pane, player)
-  local fields = pane.todo_production
+  local fields = M.element(pane)
   local value = pane.tags.production
   local target = value and resolver.prototype(value.type, value.name)
   fields.visible = value ~= false and value ~= nil
@@ -79,7 +91,7 @@ function M.refresh(pane, player)
       amount.style.font = "default-bold"
       local label = row.add{type = "label", caption = prototype and prototype.localised_name or ingredient.name}
       label.style.single_line = false
-      label.style.maximal_width = 225
+      label.style.maximal_width = 142
       local details = {""}
       if ingredient.temperature or ingredient.minimum_temperature or ingredient.maximum_temperature then
         details[#details + 1] = {"todo.production-temperature", ingredient.temperature or ingredient.minimum_temperature or "?",
@@ -98,31 +110,40 @@ function M.refresh(pane, player)
 end
 
 function M.render(pane, value, player)
-  local fields = pane.add{type = "frame", name = "todo_production", direction = "vertical", style = "inside_shallow_frame"}
-  fields.style.width = 380
+  local existing = M.element(pane)
+  if existing then existing.destroy() end
+  local parent = host(pane, player)
+  local fields = parent.add{type = "frame", name = "todo_production", direction = "vertical", style = "inside_shallow_frame",
+    index = parent == pane and 3 or nil}
+  fields.style.width = 300
   fields.style.padding = 12
   local label = fields.add{type = "label", name = "todo_target_name", style = "heading_2_label"}
   label.style.single_line = false
-  label.style.maximal_width = 350
+  label.style.maximal_width = 270
   local recipe_row = fields.add{type = "flow", name = "todo_recipe_row", direction = "horizontal"}
   recipe_row.style.vertical_align = "center"
   local recipes = recipe_row.add{type = "drop-down", name = "todo_recipe", items = {{"todo.production-choose-recipe"}}, selected_index = 1,
     tags = {todo_action = "production_recipe"}}
-  recipes.style.width = 318
+  recipes.style.width = 242
   recipe_row.add{type = "label", name = "todo_recipe_info", caption = "(i)", tooltip = {"todo.production-children-unchanged"}}
   local preview = fields.add{type = "button", name = "todo_preview", style = "list_box_item",
     tooltip = {"todo.production-toggle-ingredients"}, tags = {todo_action = "preview_ingredients"}}
-  preview.style.width = 350
+  preview.style.width = 270
   preview.style.horizontal_align = "left"
   preview.style.font = "default-bold"
   local list = fields.add{type = "scroll-pane", name = "todo_ingredients", direction = "vertical"}
-  list.style.width = 350
-  list.style.maximal_height = 180
+  list.style.width = 270
+  list.style.maximal_height = ingredient_height(player)
   local error_label = fields.add{type = "label", name = "todo_plan_error", caption = ""}
   error_label.style.single_line = false
-  error_label.style.maximal_width = 350
+  error_label.style.maximal_width = 270
   set_draft(pane, value)
   M.refresh(pane, player)
+end
+
+function M.layout(pane, player)
+  if M.element(pane).parent ~= host(pane, player) then M.render(pane, pane.tags.production, player) end
+  M.element(pane).todo_ingredients.style.maximal_height = ingredient_height(player)
 end
 
 function M.toggle_ingredients(pane, player)
@@ -198,7 +219,7 @@ function M.translated(pane, event)
 end
 
 function M.recipe_changed(pane, player)
-  local fields, value = pane.todo_production, pane.tags.production
+  local fields, value = M.element(pane), pane.tags.production
   if not value or value.type == "recipe" then return end
   local name = fields.tags.recipe_names[fields.todo_recipe_row.todo_recipe.selected_index]
   value.recipe = name ~= "" and name or nil

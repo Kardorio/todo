@@ -147,8 +147,10 @@ Les recettes verrouillées sont signalées et peuvent servir à planifier
 un objectif futur ; les recettes cachées ne figurent pas dans cette liste.
 Pour une recette choisie directement, celle-ci est déjà explicite.
 Une infobulle « (i) » accompagne le menu uniquement si la tâche possède déjà des
-sous-tâches : changer la recette ne les modifie pas. Un cadre présente directement
-les ingrédients, leurs icônes et leurs quantités dans l'éditeur. Cliquer sur son
+sous-tâches : changer la recette ne les modifie pas. Un cadre à droite du formulaire
+présente directement les ingrédients, leurs icônes et leurs quantités. Il apparaît
+uniquement lorsqu'un objectif de production est associé ; sur écran étroit, il
+passe dans le formulaire. Cliquer sur son
 en-tête replie ou développe la liste et conserve le formulaire en cours de saisie.
 
 L'éditeur ne propose pas de quantité cible. Un nouvel objectif part d'une

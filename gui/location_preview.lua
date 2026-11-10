@@ -9,11 +9,11 @@ function M.create(parent, name)
   panel.add{type = "flow", name = "todo_view", direction = "vertical"}
   local label = panel.add{type = "label", name = "todo_location"}
   label.style.single_line = false
-  label.style.maximal_width = 232
+  label.style.maximal_width = 208
   for _, action in ipairs({"location_go", "location_current", "location_clear"}) do
     local button = common.button(panel, action, {"todo." .. action .. "-label"}, nil,
       {"todo." .. action:gsub("_", "-")})
-    button.style.width = 232
+    button.style.width = 208
   end
   return panel
 end
@@ -30,7 +30,7 @@ function M.refresh(panel, tags, visible)
       camera = view.add{type = "camera", name = "todo_camera", position = tags.position,
         surface_index = tags.surface_index, zoom = 0.5, tags = {todo_action = "location_go"},
         tooltip = {"todo.location-go"}}
-      camera.style.size = {232, 180}
+      camera.style.size = {208, 180}
     else
       camera.surface_index = tags.surface_index
       camera.position = tags.position

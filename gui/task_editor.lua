@@ -32,9 +32,11 @@ end
 function M.resize(player)
   local pane = holder(player)
   if not pane then return end
-  pane.style.width = 420
+  pane.style.width = 340
+  pane.style.top_padding = 12
   pane.style.maximal_height = math.max(180, math.min(570, player.display_resolution.height / player.display_scale - 150))
   refresh_preview(player)
+  production_fields.layout(pane, player)
 end
 
 local function field(parent, caption, spec)
@@ -66,11 +68,11 @@ function M.open(player, id, parent_id)
   pane.tags = {task_id = task and task.id or 0, revision = task and task.revision or 0,
     position = task and task.position or false, surface_index = task and task.surface_index or false,
     parent_id = parent_id or false}
-  pane.add{type = "label", caption = {"todo.field-title"}}
+  pane.add{type = "label", caption = {"todo.field-title"}, style = "heading_2_label"}
   local title_row = pane.add{type = "flow", name = "todo_title_row", direction = "horizontal"}
   local title = title_row.add{type = "textfield", name = "todo_title", text = task and task.title or "",
     tags = {todo_action = "production_title"}}
-  title.style.width = 330
+  title.style.width = 250
   title_row.style.vertical_align = "center"
   title_row.add{type = "choose-elem-button", name = "todo_choose_target", elem_type = "signal",
     tooltip = {"todo.target-choose-help"}, tags = {todo_action = "production_target"}}
@@ -78,7 +80,7 @@ function M.open(player, id, parent_id)
   local description = field(pane, "todo.description", {type = "text-box", name = "todo_description",
     text = task and task.description or ""})
   description.word_wrap = true
-  description.style.width = 380
+  description.style.width = 300
   description.style.height = 80
   local status_items, selected = {}, 1
   for i, value in ipairs(statuses) do
@@ -89,11 +91,11 @@ function M.open(player, id, parent_id)
   options.style.horizontal_spacing = 12
   options.add{type = "label", caption = {"todo.status"}}
   options.add{type = "label", caption = {"todo.priority"}}
-  options.add{type = "drop-down", name = "todo_status", items = status_items, selected_index = selected}.style.width = 184
+  options.add{type = "drop-down", name = "todo_status", items = status_items, selected_index = selected}.style.width = 144
   local priorities = {}
   for priority = 0, 3 do priorities[#priorities + 1] = {"todo.priority-" .. priority} end
   options.add{type = "drop-down", name = "todo_priority", items = priorities,
-    selected_index = (task and task.priority or 0) + 1}.style.width = 184
+    selected_index = (task and task.priority or 0) + 1}.style.width = 144
   if task then
     local author = pane.add{type = "label", caption = {"todo.author", task.creator_name, task.created_at}}
     author.style.font_color = {r = 0.65, g = 0.65, b = 0.65}
@@ -102,8 +104,8 @@ function M.open(player, id, parent_id)
   local actions = pane.add{type = "flow"}
   local save = common.button(actions, "save", {"todo.save"})
   save.style = "confirm_button"
-  save.style.width = 200
-  common.button(actions, "reload_editor", {"todo.reload"}, nil, {"todo.reload-help"})
+  save.style.width = 170
+  common.button(actions, "reload_editor", {"todo.reload"}, nil, {"todo.reload-help"}).style.width = 90
   if task then common.sprite(actions, "delete", "trash", task.id, {"todo.delete-help"}) end
   local confirm = pane.add{type = "flow", name = "todo_delete_confirm", direction = "vertical"}
   confirm.visible = false

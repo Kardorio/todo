@@ -265,10 +265,10 @@ local function run_checks()
   assert(not action_ok and not common.is_preserving(player.index))
   click(tree()["task_" .. root.id].todo_edit)
   pane().todo_description.text = "Draft kept while another task changes"
-  editor.resize{gui = player.gui, display_resolution = {width = 900, height = 600}, display_scale = 1}
+  editor.resize{gui = player.gui, force = player.force, display_resolution = {width = 900, height = 600}, display_scale = 1}
   assert(pane().style.maximal_height == 450)
   assert(pane().todo_description.text == "Draft kept while another task changes")
-  editor.resize{gui = player.gui, display_resolution = {width = 900, height = 600}, display_scale = 1.5}
+  editor.resize{gui = player.gui, force = player.force, display_resolution = {width = 900, height = 600}, display_scale = 1.5}
   assert(pane().style.maximal_height == 250)
   assert(pane().todo_description.text == "Draft kept while another task changes")
   editor.resize(player)
@@ -380,7 +380,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 18)
+    assert(store.get().gui_revision == 19)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)
