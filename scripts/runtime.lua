@@ -6,8 +6,9 @@ local editor = require("gui.task_editor")
 local common = require("gui.common")
 local locations = require("scripts.location_manager")
 local selector = require("gui.production_selector")
+local factopedia = require("integrations.factopedia")
 local M = {}
-local gui_revision = 10
+local gui_revision = 11
 
 local function open_list(player)
   selector.close(player)
@@ -149,6 +150,7 @@ function M.clicked(event)
   elseif action == "production_edit" then open_editor(player, id)
   elseif action == "production_add" then
     if selector.add(player) then open_list(player) M.refresh() end
+  elseif action == "show_factoriopedia" then factopedia.open(player, tasks.get(id))
   elseif action == "show_location" then
     local task = tasks.get(id)
     if task then

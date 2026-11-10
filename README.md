@@ -2,8 +2,8 @@
 
 Gestionnaire de tâches indépendant pour **Factorio 2.1**, sans dépendance à un
 service externe ni à un mod de contenu. La V1 gère les tâches ; le lot 2 ajoute
-les objectifs de production et leur décomposition progressive. La Factoriopedia
-appartient au lot 3.
+les objectifs de production et leur décomposition progressive. Le panneau de rappel
+permet d'ouvrir la Factoriopedia ; l'ajout de tâches depuis celle-ci reste prévu au lot 3.
 
 ## Utilisation
 
@@ -38,10 +38,15 @@ appartient au lot 3.
 - La corbeille de tâche demande confirmation. Les enfants sont conservés et
   remontent au parent de la tâche supprimée, à sa place dans l'ordre des tâches.
 
-Le panneau compact affiche les tâches épinglées et leurs descendants. Il disparaît
+Le panneau compact sert uniquement de rappel : titres en texte, sous-tâches
+indentées et liens vers la carte ou la Factoriopedia lorsqu'une cible est associée.
+La couleur rappelle le statut ; le survol affiche le texte complet et les notes.
+Les actions de gestion restent dans la fenêtre principale, accessible avec `/todo`
+ou le bouton **Tâches**. Les branches y sont repliables, tandis que le rappel affiche
+tous les descendants des tâches épinglées. Il disparaît
 automatiquement lorsqu'aucune tâche existante n'est épinglée, puis réapparaît dès
 qu'une tâche est épinglée si sa visibilité est activée. Les épingles
-et branches repliées sont propres à chaque joueur. Le bouton d'épingle d'une ligne
+et branches repliées de la fenêtre principale sont propres à chaque joueur. Le bouton d'épingle d'une ligne
 ajoute ou retire cette tâche du panneau. Épingler un enfant déjà visible sous un
 ancêtre épinglé ne le duplique pas. La barre de titre permet de déplacer le
 panneau ; sa croix le masque. Le bouton d'épingle en haut de l'écran le réaffiche.
@@ -144,8 +149,8 @@ Les ingrédients sont des besoins bruts, y compris lorsqu'un catalyseur revient
 parmi les résultats. Les contraintes de température et de qualité des ingrédients
 sont affichées dans la décomposition ; le joueur choisit sa chaîne et ses machines.
 
-Une icône de la cible apparaît dans la liste et le panneau compact, dans une
-colonne fixe. Elle ouvre **Décomposer les composants**. Cocher uniquement les
+L'icône de la cible ouvre **Décomposer les composants** dans la fenêtre principale,
+et sa page Factoriopedia dans le panneau de rappel. Cocher uniquement les
 composants à transformer en sous-tâches, puis choisir **Ajouter les composants
 sélectionnés**. Les autres restent simplement des ingrédients, sans création de
 tâche. Chaque nouvelle sous-tâche conserve sa quantité, mais aucune recette ne lui
@@ -167,4 +172,4 @@ vérifient la sélection, les quantités, les doublons, les conflits, le dévelo
 progressif et le passage d'une véritable sauvegarde V1 au nouveau schéma.
 Ces prototypes de test ne sont pas inclus dans l'archive distribuable.
 
-La Factoriopedia reste prévue pour le lot 3.
+L'ajout de tâches depuis la Factoriopedia reste prévu pour le lot 3.

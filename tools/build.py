@@ -12,7 +12,7 @@ import zipfile
 from validate import validate
 
 ROOT = Path(__file__).resolve().parents[1]
-FILES = ("info.json", "control.lua", "scripts", "gui", "locale")
+FILES = ("info.json", "control.lua", "scripts", "gui", "integrations", "locale")
 
 
 def metadata():

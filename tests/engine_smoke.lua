@@ -88,6 +88,13 @@ local function run_checks()
   assert(not panel())
   click(player.gui.top.todo_manager_toggle_panel)
   assert(panel() and prefs.panel_visible)
+  assert(#panel().todo_panel_tree.children == 2, "Reminder must show children even if the management tree is collapsed")
+  local reminder = panel()
+  local revision = tasks.get(1).revision
+  assert(reminder.todo_panel_tree.task_1.todo_show_factoriopedia.sprite == "item/todo-test-goal")
+  click(reminder.todo_panel_tree.task_1.todo_show_factoriopedia)
+  assert(panel() == reminder and tasks.get(1).revision == revision)
+  player.close_factoriopedia_gui()
   click(player.gui.top.todo_manager_open)
   assert(frame() and not edit_frame() and not frame().todo_content)
   assert(tree().task_1 and not tree().task_2)
@@ -121,11 +128,18 @@ local function run_checks()
   assert(child_columns.todo_edit == root_columns.todo_edit + 24)
   assert(tree().task_1.todo_edit.style.minimal_width == tree().task_2.todo_edit.style.minimal_width + 24)
   assert(tree().task_1.todo_priority_label.caption == "" and tree().task_2.todo_priority_label.caption == "!!!")
-  local compact_root = column_offsets(panel().todo_panel_tree.task_1)
-  local compact_child = column_offsets(panel().todo_panel_tree.task_2)
-  assert(compact_child.todo_done == compact_root.todo_done + 24)
-  assert(compact_root.todo_pin == compact_child.todo_pin)
-  assert(compact_root.todo_show_location == compact_child.todo_location_space)
+  local compact_root = panel().todo_panel_tree.task_1
+  local compact_child = panel().todo_panel_tree.task_2
+  assert(compact_root.todo_title.type == "label" and compact_child.todo_title.type == "label")
+  assert(compact_child.todo_indent.style.minimal_width == compact_root.todo_indent.style.minimal_width + 24)
+  for _, row in ipairs(panel().todo_panel_tree.children) do
+    for _, element in ipairs(row.children) do
+      assert(element.type ~= "checkbox")
+      if element.type == "sprite-button" then
+        assert(element.tags.todo_action == "show_location" or element.tags.todo_action == "show_factoriopedia")
+      else assert(not element.tags.todo_action) end
+    end
+  end
   assert(#panel().todo_panel_tree.children == 2)
   local children_reads, actual_tree = 0, tree()
   local proxy = setmetatable({}, {__index = function(_, key)
@@ -296,7 +310,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 10)
+    assert(store.get().gui_revision == 11)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)
