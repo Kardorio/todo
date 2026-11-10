@@ -57,23 +57,29 @@ function M.refresh(pane, player)
   local plan
   if draft then plan, err = production.plan{production = draft} end
   fields.todo_preview.visible = plan ~= nil
-  fields.todo_preview.caption = plan and {pane.tags.ingredients_open and "todo.production-hide-ingredients"
-    or "todo.production-view-ingredients", #plan.ingredients} or ""
+  fields.todo_preview.caption = plan and {"", "[img=virtual-signal/",
+    pane.tags.ingredients_open ~= false and "down-arrow" or "right-arrow", "]  ",
+    {"todo.production-ingredients", #plan.ingredients}} or ""
   fields.todo_plan_error.caption = err and {"todo.error-" .. err} or ""
   local list = fields.todo_ingredients
   list.clear()
-  list.visible = plan ~= nil and pane.tags.ingredients_open == true
+  list.visible = plan ~= nil and pane.tags.ingredients_open ~= false
   if plan and list.visible then
     for _, ingredient in ipairs(plan.ingredients) do
       local row = list.add{type = "flow", name = "ingredient_" .. ingredient.index}
       row.style.vertical_align = "center"
-      local icon = row.add{type = "sprite", sprite = ingredient.type .. "/" .. ingredient.name}
-      icon.style.size = {24, 24}
+      row.style.horizontal_spacing = 10
+      local icon = row.add{type = "sprite-button", sprite = ingredient.type .. "/" .. ingredient.name,
+        style = "slot_button"}
+      icon.style.size = {36, 36}
       local prototype = resolver.prototype(ingredient.type, ingredient.name)
-      local label = row.add{type = "label", caption = {"", prototype and prototype.localised_name or ingredient.name,
-        " × ", string.format("%.6g", ingredient.amount)}}
+      local amount = row.add{type = "label", caption = string.format("%.6g", ingredient.amount) .. " ×"}
+      amount.style.width = 52
+      amount.style.horizontal_align = "right"
+      amount.style.font = "default-bold"
+      local label = row.add{type = "label", caption = prototype and prototype.localised_name or ingredient.name}
       label.style.single_line = false
-      label.style.maximal_width = 300
+      label.style.maximal_width = 225
       local details = {""}
       if ingredient.temperature or ingredient.minimum_temperature or ingredient.maximum_temperature then
         details[#details + 1] = {"todo.production-temperature", ingredient.temperature or ingredient.minimum_temperature or "?",
@@ -84,23 +90,31 @@ function M.refresh(pane, player)
         details[#details + 1] = {"todo.production-quality", tostring(ingredient.quality_min or "normal"),
           tostring(ingredient.quality_max or "*"), ingredient.quality_change or 0}
       end
+      icon.tooltip = {"", prototype and prototype.localised_name or ingredient.name,
+        " × ", string.format("%.6g", ingredient.amount), #details > 1 and "\n" or "", details}
       if #details > 1 then label.tooltip = details end
     end
   end
 end
 
 function M.render(pane, value, player)
-  local fields = pane.add{type = "flow", name = "todo_production", direction = "vertical"}
+  local fields = pane.add{type = "frame", name = "todo_production", direction = "vertical", style = "inside_shallow_frame"}
+  fields.style.width = 380
+  fields.style.padding = 12
+  local label = fields.add{type = "label", name = "todo_target_name", style = "heading_2_label"}
+  label.style.single_line = false
+  label.style.maximal_width = 350
   local recipe_row = fields.add{type = "flow", name = "todo_recipe_row", direction = "horizontal"}
   recipe_row.style.vertical_align = "center"
   local recipes = recipe_row.add{type = "drop-down", name = "todo_recipe", items = {{"todo.production-choose-recipe"}}, selected_index = 1,
     tags = {todo_action = "production_recipe"}}
-  recipes.style.width = 350
+  recipes.style.width = 318
   recipe_row.add{type = "label", name = "todo_recipe_info", caption = "(i)", tooltip = {"todo.production-children-unchanged"}}
-  local label = fields.add{type = "label", name = "todo_target_name"}
-  label.style.single_line = false
-  label.style.maximal_width = 310
-  fields.add{type = "button", name = "todo_preview", tags = {todo_action = "preview_ingredients"}}
+  local preview = fields.add{type = "button", name = "todo_preview", style = "list_box_item",
+    tooltip = {"todo.production-toggle-ingredients"}, tags = {todo_action = "preview_ingredients"}}
+  preview.style.width = 350
+  preview.style.horizontal_align = "left"
+  preview.style.font = "default-bold"
   local list = fields.add{type = "scroll-pane", name = "todo_ingredients", direction = "vertical"}
   list.style.width = 350
   list.style.maximal_height = 180
@@ -113,7 +127,7 @@ end
 
 function M.toggle_ingredients(pane, player)
   local tags = pane.tags
-  tags.ingredients_open = not tags.ingredients_open
+  tags.ingredients_open = tags.ingredients_open == false
   pane.tags = tags
   M.refresh(pane, player)
 end

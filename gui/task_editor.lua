@@ -53,25 +53,30 @@ function M.open(player, id, parent_id)
   local title_row = pane.add{type = "flow", name = "todo_title_row", direction = "horizontal"}
   local title = title_row.add{type = "textfield", name = "todo_title", text = task and task.title or "",
     tags = {todo_action = "production_title"}}
-  title.style.width = 310
+  title.style.width = 330
+  title_row.style.vertical_align = "center"
   title_row.add{type = "choose-elem-button", name = "todo_choose_target", elem_type = "signal",
     tooltip = {"todo.target-choose-help"}, tags = {todo_action = "production_target"}}
   production_fields.render(pane, task and task.production or false, player)
   local description = field(pane, "todo.description", {type = "text-box", name = "todo_description",
     text = task and task.description or ""})
   description.word_wrap = true
-  description.style.width = 310
-  description.style.height = 90
+  description.style.width = 380
+  description.style.height = 80
   local status_items, selected = {}, 1
   for i, value in ipairs(statuses) do
     status_items[i] = {"todo.status-" .. value}
     if task and value == task.status then selected = i end
   end
-  field(pane, "todo.status", {type = "drop-down", name = "todo_status", items = status_items, selected_index = selected})
+  local options = pane.add{type = "table", name = "todo_options", column_count = 2}
+  options.style.horizontal_spacing = 12
+  options.add{type = "label", caption = {"todo.status"}}
+  options.add{type = "label", caption = {"todo.priority"}}
+  options.add{type = "drop-down", name = "todo_status", items = status_items, selected_index = selected}.style.width = 184
   local priorities = {}
   for priority = 0, 3 do priorities[#priorities + 1] = {"todo.priority-" .. priority} end
-  field(pane, "todo.priority", {type = "drop-down", name = "todo_priority", items = priorities,
-    selected_index = (task and task.priority or 0) + 1})
+  options.add{type = "drop-down", name = "todo_priority", items = priorities,
+    selected_index = (task and task.priority or 0) + 1}.style.width = 184
   local ids, parents, parent_index = {0}, {{"todo.root"}}, 1
   local desired_parent = task and task.parent_id or parent_id
   for _, candidate in ipairs(tasks.list()) do
@@ -83,12 +88,13 @@ function M.open(player, id, parent_id)
   end
   local parent = field(pane, "todo.parent", {type = "drop-down", name = "todo_parent",
     items = parents, selected_index = parent_index})
-  parent.style.width = 310
+  parent.style.width = 380
   local tags = pane.tags
   tags.parent_ids = ids
   pane.tags = tags
   if task then
-    pane.add{type = "label", caption = {"todo.author", task.creator_name, task.created_at}}
+    local author = pane.add{type = "label", caption = {"todo.author", task.creator_name, task.created_at}}
+    author.style.font_color = {r = 0.65, g = 0.65, b = 0.65}
   end
   local location = pane.add{type = "label", name = "todo_location", caption = locations.describe(pane.tags)}
   location.style.single_line = false
@@ -98,7 +104,9 @@ function M.open(player, id, parent_id)
   common.sprite(location_buttons, "location_clear", "trash", nil, {"todo.location-clear"})
   common.sprite(location_buttons, "location_go", "map", nil, {"todo.location-go"})
   local actions = pane.add{type = "flow"}
-  common.button(actions, "save", {"todo.save"})
+  local save = common.button(actions, "save", {"todo.save"})
+  save.style = "confirm_button"
+  save.style.width = 200
   common.button(actions, "reload_editor", {"todo.reload"}, nil, {"todo.reload-help"})
   if task then common.sprite(actions, "delete", "trash", task.id, {"todo.delete-help"}) end
   local confirm = pane.add{type = "flow", name = "todo_delete_confirm", direction = "vertical"}
@@ -180,7 +188,7 @@ function M.save(player)
   local parent_id = tags.parent_ids[pane.todo_parent.selected_index]
   local changes = {
     title = pane.todo_title_row.todo_title.text, description = pane.todo_description.text,
-    status = statuses[pane.todo_status.selected_index], priority = pane.todo_priority.selected_index - 1,
+    status = statuses[pane.todo_options.todo_status.selected_index], priority = pane.todo_options.todo_priority.selected_index - 1,
     parent_id = parent_id ~= 0 and parent_id or false,
     position = tags.position, surface_index = tags.surface_index, production = target
   }

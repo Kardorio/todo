@@ -214,8 +214,8 @@ local function run_checks()
   assert(pane().todo_error.caption[1] == "todo.error-title_required")
   pane().todo_title_row.todo_title.text = "Créée dans la fenêtre"
   pane().todo_description.text = "Prévoir une gare"
-  pane().todo_status.selected_index = 2
-  pane().todo_priority.selected_index = 4
+  pane().todo_options.todo_status.selected_index = 2
+  pane().todo_options.todo_priority.selected_index = 4
   click(find(pane(), "todo_save"))
   assert(frame() and not edit_frame())
   local ui_task = assert(tasks.get(before + 1))
@@ -358,7 +358,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 16)
+    assert(store.get().gui_revision == 17)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)
