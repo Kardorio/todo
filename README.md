@@ -40,6 +40,7 @@ permet d'ouvrir la Factoriopedia ; l'ajout de tâches depuis celle-ci reste pré
 
 Le panneau compact sert uniquement de rappel : titres en texte, sous-tâches
 indentées et liens vers la carte ou la Factoriopedia lorsqu'une cible est associée.
+Les icônes occupent deux colonnes fixes ; seuls les titres des sous-tâches sont décalés.
 La couleur rappelle le statut ; le survol affiche le texte complet et les notes.
 Les actions de gestion restent dans la fenêtre principale, accessible avec `/todo`
 ou le bouton **Tâches**. Les branches y sont repliables, tandis que le rappel affiche

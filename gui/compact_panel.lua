@@ -14,13 +14,13 @@ local colors = {
 local function render_list(parent, roots)
   local entries = tasks.tree({}, roots)
   local rows = parent.children
-  local rebuild = parent.tags.reminder_layout ~= 1 or #rows ~= #entries
+  local rebuild = parent.tags.reminder_layout ~= 2 or #rows ~= #entries
   if not rebuild then
     for index, entry in ipairs(entries) do
       if rows[index].name ~= "task_" .. entry.task.id then rebuild = true break end
     end
   end
-  if rebuild then parent.clear() parent.tags = {reminder_layout = 1} end
+  if rebuild then parent.clear() parent.tags = {reminder_layout = 2} end
   for _, entry in ipairs(entries) do
     local task = entry.task
     local row = parent["task_" .. task.id]
@@ -29,20 +29,26 @@ local function render_list(parent, roots)
       row.style.vertical_align = "center"
       row.style.horizontal_spacing = 4
       row.style.minimal_height = 28
-      row.add{type = "empty-widget", name = "todo_indent"}
       common.sprite(row, "show_location", "map", task.id)
+      local location_space = row.add{type = "empty-widget", name = "todo_location_space"}
+      location_space.style.width = 28
       common.sprite(row, "show_factoriopedia", "change_recipe", task.id)
+      local target_space = row.add{type = "empty-widget", name = "todo_target_space"}
+      target_space.style.width = 28
+      row.add{type = "empty-widget", name = "todo_indent"}
       row.add{type = "label", name = "todo_title"}
     end
     local indent = math.min(entry.depth * 24, 96)
     row.todo_indent.style.width = indent
     local located = task.position ~= nil and task.surface_index ~= nil
     row.todo_show_location.visible = located
+    row.todo_location_space.visible = not located
     row.todo_show_location.enabled = located and game.surfaces[task.surface_index] ~= nil
     row.todo_show_location.tooltip = locations.describe(task)
     local value = task.production
     local target = value and resolver.prototype(value.type, value.name)
     row.todo_show_factoriopedia.visible = value ~= nil
+    row.todo_target_space.visible = value == nil
     row.todo_show_factoriopedia.enabled = target ~= nil
     row.todo_show_factoriopedia.sprite = target and value.type .. "/" .. value.name or "utility/change_recipe"
     row.todo_show_factoriopedia.tooltip = {"", target and target.localised_name or (value and value.name or ""),
@@ -52,7 +58,7 @@ local function render_list(parent, roots)
       task.description ~= "" and "\n" .. task.description or ""}
     row.todo_title.style.font_color = colors[task.status]
     row.todo_title.style.single_line = true
-    row.todo_title.style.width = 360 - indent - (located and 32 or 0) - (value and 32 or 0)
+    row.todo_title.style.width = 296 - indent
   end
 end
 

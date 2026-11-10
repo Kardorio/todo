@@ -132,6 +132,11 @@ local function run_checks()
   local compact_child = panel().todo_panel_tree.task_2
   assert(compact_root.todo_title.type == "label" and compact_child.todo_title.type == "label")
   assert(compact_child.todo_indent.style.minimal_width == compact_root.todo_indent.style.minimal_width + 24)
+  local reminder_root_columns = column_offsets(compact_root)
+  local reminder_child_columns = column_offsets(compact_child)
+  assert(reminder_root_columns.todo_show_location == reminder_child_columns.todo_location_space)
+  assert(reminder_root_columns.todo_show_factoriopedia == reminder_child_columns.todo_show_factoriopedia)
+  assert(reminder_child_columns.todo_title == reminder_root_columns.todo_title + 24)
   for _, row in ipairs(panel().todo_panel_tree.children) do
     for _, element in ipairs(row.children) do
       assert(element.type ~= "checkbox")
@@ -156,6 +161,9 @@ local function run_checks()
   assert(root.title == "Augmenter les fondeurs" and root.created_by == player.index)
   assert(root.position.x == player.position.x and root.surface_index == player.surface.index)
   assert(prefs.pinned[root.id] and panel().todo_panel_tree["task_" .. root.id])
+  local plain_columns = column_offsets(panel().todo_panel_tree["task_" .. root.id])
+  assert(plain_columns.todo_title == reminder_root_columns.todo_title)
+  assert(plain_columns.todo_target_space == reminder_root_columns.todo_show_factoriopedia)
   runtime.command{player_index = player.index, parameter = " "}
   assert(store.get().next_id == before + 1)
   click(find(frame(), "todo_new"))
@@ -310,7 +318,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 11)
+    assert(store.get().gui_revision == 12)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)
