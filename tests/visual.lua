@@ -1,0 +1,58 @@
+local runtime = require("scripts.runtime")
+local tasks = require("scripts.task_manager")
+local store = require("scripts.storage")
+
+script.on_init(function()
+  runtime.initialize()
+  if remote.interfaces.freeplay then
+    remote.call("freeplay", "set_skip_intro", true)
+    remote.call("freeplay", "set_disable_crashsite", true)
+  end
+  local surface = game.surfaces[1]
+  surface.request_to_generate_chunks({0, 0}, 2)
+  surface.force_generate_chunk_requests()
+  surface.daytime = 0
+  surface.freeze_daytime = true
+  storage.todo_visual_phase = 0
+end)
+
+local function tick(event)
+  local player = game.get_player(1)
+  if not player or storage.todo_visual_phase == nil then return end
+  if storage.todo_visual_phase == 0 and event.tick >= 60 then
+    player.teleport({0, 0}, game.surfaces[1])
+    player.zoom = 1
+    local locomotive = assert(tasks.create("Automatiser les locomotives", player, game.tick))
+    assert(tasks.update(locomotive.id, {production = {type = "item", name = "locomotive", recipe = "locomotive"}}))
+    local engines = assert(tasks.create("Renforcer la production de moteurs", player, game.tick, locomotive.id, false))
+    assert(tasks.update(engines.id, {status = "IN_PROGRESS", production = {type = "item", name = "engine-unit"}}))
+    local steel = assert(tasks.create("Prévoir un stock d'acier", player, game.tick, locomotive.id, false))
+    assert(tasks.update(steel.id, {status = "DONE"}))
+    local station = assert(tasks.create("Construire la gare de ravitaillement", player, game.tick))
+    local note = assert(tasks.create("Vérifier les priorités des répartiteurs", player, game.tick, nil, false))
+    local prefs = store.player(player.index)
+    prefs.pinned = {[locomotive.id] = true, [station.id] = true, [note.id] = true}
+    prefs.panel_visible = true
+    prefs.panel_location = {x = 36, y = 110}
+    runtime.refresh()
+    storage.todo_visual_phase = 1
+  elseif storage.todo_visual_phase == 1 and event.tick >= 100 then
+    game.take_screenshot{player = player, position = {0, 0}, resolution = {1280, 900}, zoom = 1,
+      show_gui = true, path = "todo-reminder.png", force_render = true}
+    storage.todo_visual_phase = 2
+  elseif storage.todo_visual_phase == 2 and event.tick >= 130 then
+    runtime.command{player_index = player.index}
+    storage.todo_visual_phase = 3
+  elseif storage.todo_visual_phase == 3 and event.tick >= 160 then
+    game.take_screenshot{player = player, position = {0, 0}, resolution = {1280, 900}, zoom = 1,
+      show_gui = true, path = "todo-management.png", force_render = true}
+    helpers.write_file("todo-visual-result.txt", "TODO VISUAL OK\n", false)
+    storage.todo_visual_phase = nil
+  end
+end
+
+script.on_event(defines.events.on_tick, tick)
+script.on_load(function()
+  runtime.loaded()
+  script.on_event(defines.events.on_tick, tick)
+end)

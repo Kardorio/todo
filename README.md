@@ -100,6 +100,7 @@ l'infobulle. Les grandes listes disposent d'un défilement horizontal et vertica
 ```sh
 ./build.sh check
 FACTORIO_BIN=/chemin/vers/factorio-autonome/bin/x64/factorio ./build.sh test
+FACTORIO_GUI_BIN=/chemin/vers/factorio-autonome-graphique/bin/x64/factorio python3 tests/visual.py
 ```
 
 `check` vérifie la syntaxe avec `liblua5.2.so.0` et la cohérence des traductions
@@ -112,8 +113,12 @@ les déplacements, les épingles et les positions, dont les surfaces supprimées
 Les données de test et de jeu sont isolées dans un répertoire temporaire. Aucun
 moteur Steam n'est lancé. `FACTORIO_BIN` est obligatoire pour ce test.
 
-Le rendu visuel et le confort d'utilisation restent à vérifier avec un client
-graphique autonome. Une session avec plusieurs clients et le transfert d'une
+Le test graphique utilise un client autonome Factorio 2.1, avec rendu hors écran
+et profil temporaire, sans démarrer Steam ni utiliser les sauvegardes du joueur.
+Il produit deux vraies captures dans `tests/visual-output/` : le rappel compact
+et la fenêtre de gestion. Sans variable `FACTORIO_GUI_BIN`, il cherche le client
+dans `.tools/factorio-standalone/bin/x64/factorio`.
+Une session avec plusieurs clients et le transfert d'une
 sauvegarde sur un autre ordinateur ne sont pas couverts par le test moteur.
 Aucun contrôle de couverture ni pré-commit n'est configuré.
 
