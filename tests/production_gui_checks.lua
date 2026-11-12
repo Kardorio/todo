@@ -66,6 +66,8 @@ return function(player)
   assert(not production_fields.element(pane()).todo_recipe_row.todo_recipe_info.visible)
   assert(not production_fields.element(pane()).todo_clear_target)
   local filter = production_fields.element(pane()).todo_target_header.todo_filter_recipes
+  assert(filter.sprite == "utility/side_menu_tutorials_icon" and helpers.is_valid_sprite_path(filter.sprite))
+  assert(filter.toggled and filter.tooltip[1] == "factoriopedia.show-unresearched")
   local function contains_recipe(name)
     for _, candidate in ipairs(production_fields.element(pane()).tags.recipe_names) do
       if candidate == name then return true end
@@ -74,9 +76,11 @@ return function(player)
   end
   assert(contains_recipe("todo-test-beta"))
   click(filter)
+  assert(not filter.toggled)
   assert(not contains_recipe("todo-test-beta") and not pane().tags.production.recipe)
   assert(store.player(player.index).show_locked_recipes == false)
   click(filter)
+  assert(filter.toggled)
   assert(contains_recipe("todo-test-beta"))
   recipe("todo-test-alpha")
   local original_editor = player.gui.screen.todo_manager_editor

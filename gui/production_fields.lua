@@ -72,8 +72,8 @@ function M.refresh(pane, player)
   recipe_row.todo_recipe.selected_index = selected
   recipe_row.visible = value ~= false and value ~= nil and value.type ~= "recipe" and (#candidates > 1 or #names > 2)
   fields.todo_target_header.todo_filter_recipes.visible = value ~= false and value ~= nil and value.type ~= "recipe" and #candidates > 0
-  fields.todo_target_header.todo_filter_recipes.toggled = not show_locked
-  fields.todo_target_header.todo_filter_recipes.tooltip = {show_locked and "todo.hide-locked-recipes" or "todo.show-locked-recipes"}
+  fields.todo_target_header.todo_filter_recipes.toggled = show_locked
+  fields.todo_target_header.todo_filter_recipes.tooltip = {"factoriopedia.show-unresearched"}
   M.refresh_info(pane)
   fields.tags = {recipe_names = names}
   local draft, err = M.read(pane)
@@ -143,7 +143,10 @@ function M.render(pane, value, player)
   local label = heading.add{type = "label", name = "todo_target_name", style = "heading_2_label"}
   label.style.single_line = false
   label.style.width = 234
-  common.sprite(heading, "filter_recipes", "technology_white", nil, {"todo.hide-locked-recipes"})
+  local filter = common.sprite(heading, "filter_recipes", "side_menu_tutorials_icon", nil, {"factoriopedia.show-unresearched"})
+  filter.style = "frame_action_button"
+  filter.style.size = {28, 28}
+  filter.style.padding = 0
   local recipe_row = fields.add{type = "flow", name = "todo_recipe_row", direction = "horizontal"}
   recipe_row.style.vertical_align = "center"
   local recipes = recipe_row.add{type = "drop-down", name = "todo_recipe", items = {{"todo.production-choose-recipe"}}, selected_index = 1,
