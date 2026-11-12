@@ -1,5 +1,6 @@
 local resolver = require("scripts.recipe_resolver")
 local tasks = require("scripts.task_manager")
+local titles = require("scripts.task_titles")
 local M = {}
 
 local function finite(value)
@@ -112,6 +113,7 @@ function M.expand(id, selected_indices, player, tick, expected_revision)
       child = assert(tasks.create(ingredient.name, player, tick, id, false))
       assert(tasks.update(child.id, {production = entry.production}, child.revision))
       child.source_recipe, child.source_ingredient = plan.recipe, ingredient.index
+      titles.request(player, child)
     end
     result[#result + 1] = child
   end

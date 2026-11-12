@@ -4,6 +4,7 @@ local locations = require("scripts.location_manager")
 local common = require("gui.common")
 local production_fields = require("gui.production_fields")
 local location_preview = require("gui.location_preview")
+local production = require("scripts.production_manager")
 local M = {}
 local statuses = {"TODO", "IN_PROGRESS", "DONE", "IGNORED"}
 
@@ -184,6 +185,21 @@ function M.save(player)
   local target, target_error = production_fields.read(pane)
   if target == nil then M.error(player, target_error) return end
   local parent_id = tags.parent_id
+  local selected = {}
+  for index, queued in pairs(tags.queued_ingredients or {}) do
+    if queued then selected[#selected + 1] = index end
+  end
+  table.sort(selected)
+  if #selected > 0 then
+    local plan, plan_error = production.plan{production = target}
+    if not plan then M.error(player, plan_error) return nil end
+    for _, index in ipairs(selected) do
+      local ingredient = plan.ingredients[index]
+      if not ingredient then M.error(player, "invalid_selection") return nil end
+      local valid, validation_error = production.validate{type = ingredient.type, name = ingredient.name, quantity = ingredient.amount}
+      if not valid then M.error(player, validation_error) return nil end
+    end
+  end
   local changes = {
     title = pane.todo_title_row.todo_title.text, description = pane.todo_description.text,
     status = statuses[pane.todo_options.todo_status.selected_index], priority = pane.todo_options.todo_priority.selected_index - 1,
@@ -197,6 +213,10 @@ function M.save(player)
   end
   if not task then M.error(player, err) return nil end
   if tags.task_id == 0 then store.player(player.index).pinned[task.id] = true end
+  if #selected > 0 then
+    local children, expand_error = production.expand(task.id, selected, player, game.tick, task.revision)
+    if not children then M.error(player, expand_error) return nil end
+  end
   return task
 end
 
@@ -209,6 +229,8 @@ function M.production_changed(player, element)
     if not ok then M.error(player, err) end
   elseif action == "production_recipe" then production_fields.recipe_changed(pane, player)
   elseif action == "preview_ingredients" then production_fields.toggle_ingredients(pane, player)
+  elseif action == "filter_recipes" then production_fields.filter_recipes(pane, player)
+  elseif action == "queue_ingredient" then production_fields.queue_ingredient(pane, player, element.tags.ingredient_index)
   elseif action == "production_title" then production_fields.title_changed(pane)
   end
 end

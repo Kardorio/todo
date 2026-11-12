@@ -3,6 +3,7 @@ local tasks = require("scripts.task_manager")
 local store = require("scripts.storage")
 local window = require("gui.main_window")
 local editor = require("gui.task_editor")
+local production_fields = require("gui.production_fields")
 
 script.on_init(function()
   runtime.initialize()
@@ -97,6 +98,47 @@ local function tick(event)
   elseif storage.todo_visual_phase == 9 and event.tick >= storage.todo_visual_next_tick then
     game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
       path = "todo-location-editor.png", force_render = true}
+    storage.todo_visual_phase = 10
+    storage.todo_visual_next_tick = event.tick + 30
+  elseif storage.todo_visual_phase == 10 and event.tick >= storage.todo_visual_next_tick then
+    local pane = player.gui.screen.todo_manager_editor.todo_body.todo_editor
+    local add = production_fields.element(pane).todo_ingredients.ingredient_1.todo_queue_ingredient
+    editor.production_changed(player, add)
+    storage.todo_visual_child = store.get().next_id
+    local task = assert(editor.save(player))
+    local child = assert(tasks.get(storage.todo_visual_child))
+    assert(child.parent_id == task.id and child.source_ingredient == 1 and child.source_recipe == "locomotive")
+    storage.todo_visual_phase = 11
+    storage.todo_visual_next_tick = event.tick + 240
+  elseif storage.todo_visual_phase == 11 then
+    local child = tasks.get(storage.todo_visual_child)
+    if child.title == child.production.name then
+      assert(event.tick < storage.todo_visual_next_tick, "Ingredient title was not translated")
+      return
+    end
+    runtime.command{player_index = player.index}
+    storage.todo_visual_phase = 12
+    storage.todo_visual_next_tick = event.tick + 30
+  elseif storage.todo_visual_phase == 12 and event.tick >= storage.todo_visual_next_tick then
+    game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
+      path = "todo-added-ingredient.png", force_render = true}
+    storage.todo_visual_phase = 13
+    storage.todo_visual_next_tick = event.tick + 30
+  elseif storage.todo_visual_phase == 13 and event.tick >= storage.todo_visual_next_tick then
+    window.close(player)
+    editor.open(player)
+    editor.set_target(player, "item", "todo-test-goal")
+    local pane = player.gui.screen.todo_manager_editor.todo_body.todo_editor
+    local fields = production_fields.element(pane)
+    for index, name in ipairs(fields.tags.recipe_names) do
+      if name == "todo-test-beta" then fields.todo_recipe_row.todo_recipe.selected_index = index end
+    end
+    editor.production_changed(player, fields.todo_recipe_row.todo_recipe)
+    storage.todo_visual_phase = 14
+    storage.todo_visual_next_tick = event.tick + 60
+  elseif storage.todo_visual_phase == 14 and event.tick >= storage.todo_visual_next_tick then
+    game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
+      path = "todo-locked-recipe.png", force_render = true}
     helpers.write_file("todo-visual-result.txt", "TODO VISUAL OK\n", false)
     storage.todo_visual_phase = nil
   end

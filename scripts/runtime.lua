@@ -7,8 +7,9 @@ local common = require("gui.common")
 local locations = require("scripts.location_manager")
 local selector = require("gui.production_selector")
 local factopedia = require("integrations.factopedia")
+local titles = require("scripts.task_titles")
 local M = {}
-local gui_revision = 19
+local gui_revision = 20
 
 local function open_list(player)
   selector.close(player)
@@ -145,8 +146,12 @@ function M.clicked(event)
   if action == "open" then open_list(player)
   elseif action == "close" then window.close(player)
   elseif action == "close_editor" then open_list(player)
-  elseif action == "preview_ingredients" then editor.production_changed(player, element)
+  elseif action == "preview_ingredients" or action == "filter_recipes" or action == "queue_ingredient" then
+    editor.production_changed(player, element)
   elseif action == "toggle_panel" then panel.toggle(player)
+  elseif action == "toggle_panel_settings" then
+    local frame = player.gui.screen.todo_manager_window
+    frame.todo_panel_settings.visible = not frame.todo_panel_settings.visible
   elseif action == "narrow_panel" then panel.change_width(player, -64)
   elseif action == "widen_panel" then panel.change_width(player, 64)
   elseif action == "new" then open_editor(player)
@@ -232,12 +237,14 @@ end
 function M.translated(event)
   M.ensure_ready()
   editor.translated(event)
+  if titles.translated(event) then M.refresh() end
 end
 
 function M.translation_tick()
   M.ensure_ready()
   for _, player in pairs(game.connected_players) do
     editor.retry_translation(player)
+    titles.retry(player)
   end
 end
 

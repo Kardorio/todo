@@ -1,6 +1,8 @@
 local resolver = require("scripts.recipe_resolver")
 local production = require("scripts.production_manager")
 local tasks = require("scripts.task_manager")
+local common = require("gui.common")
+local store = require("scripts.storage")
 local M = {}
 
 function M.element(pane)
@@ -38,23 +40,29 @@ function M.refresh(pane, player)
   local target = value and resolver.prototype(value.type, value.name)
   fields.visible = value ~= false and value ~= nil
   pane.todo_title_row.todo_choose_target.elem_value = target and {type = value.type, name = value.name} or nil
-  fields.todo_target_name.caption = target and target.localised_name or
+  fields.todo_target_header.todo_target_name.caption = target and target.localised_name or
     {value and "todo.production-missing-target" or "todo.production-none"}
   local names, labels, selected = {""}, {{"todo.production-choose-recipe"}}, 1
+  local candidates = value and value.type ~= "recipe" and target and resolver.recipes(value.type, value.name) or {}
+  local show_locked = store.player(pane.player_index).show_locked_recipes ~= false
+  local selected_hidden = false
   if value and value.type ~= "recipe" and target then
-    for _, recipe in ipairs(resolver.recipes(value.type, value.name)) do
-      names[#names + 1] = recipe.name
+    for _, recipe in ipairs(candidates) do
       local unlocked = player.force.recipes[recipe.name] and player.force.recipes[recipe.name].enabled
-      labels[#labels + 1] = {"", recipe.localised_name, unlocked and "" or {"todo.production-locked"}}
-      if recipe.name == value.recipe then selected = #names end
+      if show_locked or unlocked then
+        names[#names + 1] = recipe.name
+        labels[#labels + 1] = {"", unlocked and "" or "[color=255,90,80]", recipe.localised_name,
+          unlocked and "" or "[/color]"}
+        if recipe.name == value.recipe then selected = #names end
+      elseif recipe.name == value.recipe then selected_hidden = true end
     end
   end
-  if value and value.type ~= "recipe" and not value.recipe and #names == 2 then
+  if value and value.type ~= "recipe" and not value.recipe and #candidates == 1 and #names == 2 then
     value.recipe = names[2]
     selected = 2
     set_draft(pane, value)
   end
-  if value and value.type ~= "recipe" and value.recipe and selected == 1 then
+  if value and value.type ~= "recipe" and value.recipe and selected == 1 and not selected_hidden then
     names[#names + 1] = value.recipe
     labels[#labels + 1] = {"todo.production-missing-recipe", value.recipe}
     selected = #names
@@ -62,7 +70,10 @@ function M.refresh(pane, player)
   local recipe_row = fields.todo_recipe_row
   recipe_row.todo_recipe.items = labels
   recipe_row.todo_recipe.selected_index = selected
-  recipe_row.visible = value ~= false and value ~= nil and value.type ~= "recipe" and #names > 2
+  recipe_row.visible = value ~= false and value ~= nil and value.type ~= "recipe" and (#candidates > 1 or #names > 2)
+  fields.todo_target_header.todo_filter_recipes.visible = value ~= false and value ~= nil and value.type ~= "recipe" and #candidates > 0
+  fields.todo_target_header.todo_filter_recipes.toggled = not show_locked
+  fields.todo_target_header.todo_filter_recipes.tooltip = {show_locked and "todo.hide-locked-recipes" or "todo.show-locked-recipes"}
   M.refresh_info(pane)
   fields.tags = {recipe_names = names}
   local draft, err = M.read(pane)
@@ -74,6 +85,8 @@ function M.refresh(pane, player)
     {"todo.production-ingredients", #plan.ingredients}} or ""
   fields.todo_plan_error.caption = err and {"todo.error-" .. err} or ""
   local list = fields.todo_ingredients
+  local queued = pane.tags.queued_ingredients or {}
+  local existing = plan and production.existing_children(pane.tags.task_id, plan.recipe) or {}
   list.clear()
   list.visible = plan ~= nil and pane.tags.ingredients_open ~= false
   if plan and list.visible then
@@ -91,7 +104,7 @@ function M.refresh(pane, player)
       amount.style.font = "default-bold"
       local label = row.add{type = "label", caption = prototype and prototype.localised_name or ingredient.name}
       label.style.single_line = false
-      label.style.maximal_width = 142
+      label.style.width = 108
       local details = {""}
       if ingredient.temperature or ingredient.minimum_temperature or ingredient.maximum_temperature then
         details[#details + 1] = {"todo.production-temperature", ingredient.temperature or ingredient.minimum_temperature or "?",
@@ -105,6 +118,14 @@ function M.refresh(pane, player)
       icon.tooltip = {"", prototype and prototype.localised_name or ingredient.name,
         " × ", string.format("%.6g", ingredient.amount), #details > 1 and "\n" or "", details}
       if #details > 1 then label.tooltip = details end
+      local added = production.match_child(existing, ingredient) ~= nil
+      local selected_ingredient = queued[ingredient.index] == true
+      local add = common.button(row, "queue_ingredient", (added or selected_ingredient) and "✓" or "+", nil,
+        {added and "todo.ingredient-added" or selected_ingredient and "todo.ingredient-queued" or "todo.ingredient-add"})
+      add.style = "tool_button"
+      add.style.size = {28, 28}
+      add.enabled = not added
+      add.tags = {todo_action = "queue_ingredient", ingredient_index = ingredient.index}
     end
   end
 end
@@ -117,9 +138,12 @@ function M.render(pane, value, player)
     index = parent == pane and 3 or nil}
   fields.style.width = 300
   fields.style.padding = 12
-  local label = fields.add{type = "label", name = "todo_target_name", style = "heading_2_label"}
+  local heading = fields.add{type = "flow", name = "todo_target_header", direction = "horizontal"}
+  heading.style.vertical_align = "center"
+  local label = heading.add{type = "label", name = "todo_target_name", style = "heading_2_label"}
   label.style.single_line = false
-  label.style.maximal_width = 270
+  label.style.width = 234
+  common.sprite(heading, "filter_recipes", "technology_white", nil, {"todo.hide-locked-recipes"})
   local recipe_row = fields.add{type = "flow", name = "todo_recipe_row", direction = "horizontal"}
   recipe_row.style.vertical_align = "center"
   local recipes = recipe_row.add{type = "drop-down", name = "todo_recipe", items = {{"todo.production-choose-recipe"}}, selected_index = 1,
@@ -157,6 +181,7 @@ function M.set_target(pane, player, kind, name, label)
   local value = name and {type = kind, name = name, recipe = kind == "recipe" and name or nil} or false
   set_draft(pane, value)
   local tags, title = pane.tags, pane.todo_title_row.todo_title
+  tags.queued_ingredients = nil
   tags.title_translation = false
   if value and (title.text:match("^%s*$") or title.text == tags.auto_title) then
     title.text = label and label ~= "" and label or name
@@ -223,7 +248,26 @@ function M.recipe_changed(pane, player)
   if not value or value.type == "recipe" then return end
   local name = fields.tags.recipe_names[fields.todo_recipe_row.todo_recipe.selected_index]
   value.recipe = name ~= "" and name or nil
+  local tags = pane.tags
+  tags.queued_ingredients = nil
+  pane.tags = tags
   set_draft(pane, value)
+  M.refresh(pane, player)
+end
+
+function M.filter_recipes(pane, player)
+  local prefs = store.player(player.index)
+  prefs.show_locked_recipes = prefs.show_locked_recipes == false
+  M.refresh(pane, player)
+end
+
+function M.queue_ingredient(pane, player, index)
+  local plan = production.plan{production = M.read(pane)}
+  if not plan or not plan.ingredients[index] then return end
+  local tags = pane.tags
+  tags.queued_ingredients = tags.queued_ingredients or {}
+  tags.queued_ingredients[index] = not tags.queued_ingredients[index] or nil
+  pane.tags = tags
   M.refresh(pane, player)
 end
 

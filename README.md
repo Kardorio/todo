@@ -45,7 +45,8 @@ indentées et liens vers la carte ou la Factoriopedia lorsqu'une cible est assoc
 Les icônes occupent deux colonnes fixes ; seuls les titres des sous-tâches sont décalés.
 Les repères `├`, `└` et `│` matérialisent les branches de la hiérarchie.
 La couleur rappelle le statut ; le survol affiche le texte complet et les notes.
-Les boutons `−` et `+` dans l'en-tête ajustent la largeur du rappel ; ce choix
+Le réglage **Largeur du rappel**, accessible depuis l'icône de réglage dans la fenêtre de gestion,
+ajuste la largeur du rappel ; ce choix
 est conservé par joueur dans la sauvegarde et s'adapte à la taille de l'écran.
 Les actions de gestion restent dans la fenêtre principale, accessible avec `/todo`
 ou l'icône de liste dans la barre des mods. Les branches y sont repliables, tandis que le rappel affiche
@@ -122,8 +123,10 @@ moteur Steam n'est lancé. `FACTORIO_BIN` est obligatoire pour ce test.
 
 Le test graphique utilise un client autonome Factorio 2.1, avec rendu hors écran
 et profil temporaire, sans démarrer Steam ni utiliser les sauvegardes du joueur.
-Il produit cinq vraies captures dans `tests/visual-output/` : le rappel compact,
-la fenêtre de gestion, la Factoriopedia, le formulaire prérempli et l'éditeur avec aperçu de position.
+Il produit sept vraies captures dans `tests/visual-output/` : le rappel compact,
+la fenêtre de gestion, la Factoriopedia, le formulaire prérempli, l'éditeur avec
+aperçu de position, une sous-tâche ajoutée depuis les ingrédients avec son titre traduit
+et une recette verrouillée affichée en rouge avec des prototypes de test isolés.
 Sans variable `FACTORIO_GUI_BIN`, il cherche le client
 dans `.tools/factorio-standalone/bin/x64/factorio`.
 Une session avec plusieurs clients et le transfert d'une
@@ -143,8 +146,10 @@ l'association sans supprimer la tâche ni ses sous-tâches.
 Le choix de recette apparaît directement sous le titre et le composant. Lorsqu'une
 seule recette existe, elle est sélectionnée automatiquement et le menu est masqué.
 Lorsqu'il existe plusieurs recettes, choisir explicitement une alternative.
-Les recettes verrouillées sont signalées et peuvent servir à planifier
-un objectif futur ; les recettes cachées ne figurent pas dans cette liste.
+Les recettes verrouillées sont affichées en rouge. L'icône de recherche à côté
+du composant permet de les masquer ou de les réafficher ; ce filtre est mémorisé
+par joueur. Filtrer ne change jamais la recette sélectionnée et ne choisit pas
+une alternative à votre place. Les recettes cachées ne figurent pas dans cette liste.
 Pour une recette choisie directement, celle-ci est déjà explicite.
 Une infobulle « (i) » accompagne le menu uniquement si la tâche possède déjà des
 sous-tâches : changer la recette ne les modifie pas. Un cadre à droite du formulaire
@@ -152,6 +157,12 @@ présente directement les ingrédients, leurs icônes et leurs quantités. Il ap
 uniquement lorsqu'un objectif de production est associé ; sur écran étroit, il
 passe dans le formulaire. Cliquer sur son
 en-tête replie ou développe la liste et conserve le formulaire en cours de saisie.
+Le bouton `+` d'un ingrédient prépare son ajout en sous-tâche ; `✓` annule cet
+ajout tant que le formulaire n'est pas enregistré. **Enregistrer** crée les
+sous-tâches sélectionnées en même temps que l'objectif. Les composants déjà
+ajoutés sont cochés et désactivés. Changer de cible ou de recette annule les
+ajouts encore en brouillon. Les nouvelles sous-tâches prennent le nom localisé
+du prototype, fourni par le jeu ; une traduction tardive préserve les titres modifiés manuellement.
 
 L'éditeur ne propose pas de quantité cible. Un nouvel objectif part d'une
 fabrication de la recette choisie. Les quantités des composants et celles des

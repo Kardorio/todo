@@ -36,6 +36,7 @@ def main():
         target = mods / "todo-manager"
         stage(target)
         shutil.copy2(ROOT / "tests/visual.lua", target / "visual.lua")
+        shutil.copy2(ROOT / "tests/production_data.lua", target / "data-final-fixes.lua")
         with (target / "control.lua").open("a") as control:
             control.write('\nrequire("visual")\n')
         builtin = {path.parent.name for path in (binary.parents[2] / "data").glob("*/info.json")}
@@ -55,7 +56,7 @@ def main():
             raise RuntimeError(created.stdout[-8000:])
         log_path = output / "visual.log"
         marker = write / "script-output/todo-visual-result.txt"
-        names = ("todo-reminder.png", "todo-management.png", "todo-factopedia.png", "todo-from-factopedia.png", "todo-location-editor.png")
+        names = ("todo-reminder.png", "todo-management.png", "todo-factopedia.png", "todo-from-factopedia.png", "todo-location-editor.png", "todo-added-ingredient.png", "todo-locked-recipe.png")
         with log_path.open("w") as log:
             process = subprocess.Popen(base + ["--window-size", "1280x900", "--force-graphics-preset", "very-low",
                                                "--load-game", str(work / "test.zip")], env=env,

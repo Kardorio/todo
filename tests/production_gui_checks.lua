@@ -65,6 +65,19 @@ return function(player)
   assert(production_fields.element(pane()).todo_recipe_row.todo_recipe.style.minimal_width == 242)
   assert(not production_fields.element(pane()).todo_recipe_row.todo_recipe_info.visible)
   assert(not production_fields.element(pane()).todo_clear_target)
+  local filter = production_fields.element(pane()).todo_target_header.todo_filter_recipes
+  local function contains_recipe(name)
+    for _, candidate in ipairs(production_fields.element(pane()).tags.recipe_names) do
+      if candidate == name then return true end
+    end
+    return false
+  end
+  assert(contains_recipe("todo-test-beta"))
+  click(filter)
+  assert(not contains_recipe("todo-test-beta") and not pane().tags.production.recipe)
+  assert(store.player(player.index).show_locked_recipes == false)
+  click(filter)
+  assert(contains_recipe("todo-test-beta"))
   recipe("todo-test-alpha")
   local original_editor = player.gui.screen.todo_manager_editor
   pane().todo_description.text = "Brouillon des ingrédients"
@@ -76,6 +89,9 @@ return function(player)
   click(production_fields.element(pane()).todo_preview)
   assert(production_fields.element(pane()).todo_ingredients.visible and #production_fields.element(pane()).todo_ingredients.children == 2)
   recipe("todo-test-beta")
+  click(production_fields.element(pane()).todo_target_header.todo_filter_recipes)
+  assert(pane().tags.production.recipe == "todo-test-beta" and not contains_recipe("todo-test-beta"))
+  click(production_fields.element(pane()).todo_target_header.todo_filter_recipes)
   assert(#production_fields.element(pane()).todo_ingredients.children == 1)
   recipe("todo-test-alpha")
   click(production_fields.element(pane()).todo_preview)
@@ -243,5 +259,21 @@ return function(player)
   assert(pane().todo_title_row.todo_title.text == "Mon titre personnel" and not pane().tags.title_translation)
   click(find(pane(), "todo_save"))
   assert(not player.gui.screen.todo_manager_editor)
+  editor.open(player)
+  pane().todo_title_row.todo_title.text = "Objectif avec composants"
+  select_target("item", "todo-test-goal")
+  recipe("todo-test-alpha")
+  local queued_id = store.get().next_id
+  local ingredient_row = production_fields.element(pane()).todo_ingredients.ingredient_1
+  click(ingredient_row.todo_queue_ingredient)
+  assert(pane().tags.queued_ingredients[1] and store.get().next_id == queued_id)
+  click(production_fields.element(pane()).todo_ingredients.ingredient_1.todo_queue_ingredient)
+  assert(not pane().tags.queued_ingredients[1])
+  click(production_fields.element(pane()).todo_ingredients.ingredient_1.todo_queue_ingredient)
+  local queued_task = assert(editor.save(player))
+  assert(#tasks.children(queued_task.id) == 1)
+  editor.open(player, queued_task.id)
+  assert(not production_fields.element(pane()).todo_ingredients.ingredient_1.todo_queue_ingredient.enabled)
+  editor.close(player)
   log("TODO_PRODUCTION_GUI_OK")
 end

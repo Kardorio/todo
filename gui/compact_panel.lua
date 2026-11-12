@@ -99,11 +99,6 @@ function M.render(player)
   if not frame then
     frame = player.gui.screen.add{type = "frame", name = "todo_manager_panel", direction = "vertical"}
     local header = common.header(frame, {"todo.pinned"})
-    for _, action in ipairs({"narrow_panel", "widen_panel"}) do
-      local button = common.button(header, action, action == "narrow_panel" and "−" or "+", nil, {"todo." .. action})
-      button.style = "tool_button"
-      button.style.size = {28, 28}
-    end
     common.sprite(header, "toggle_panel", "close", nil, {"todo.hide-panel"})
     local list = frame.add{type = "scroll-pane", name = "todo_panel_tree", direction = "vertical"}
     list.style.maximal_height = math.max(150, math.min(400, player.display_resolution.height / player.display_scale - 230))

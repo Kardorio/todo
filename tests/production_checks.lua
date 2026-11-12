@@ -2,6 +2,7 @@ local store = require("scripts.storage")
 local tasks = require("scripts.task_manager")
 local resolver = require("scripts.recipe_resolver")
 local production = require("scripts.production_manager")
+local titles = require("scripts.task_titles")
 
 local function target(kind, name, recipe, quantity)
   return {type = kind, name = "todo-test-" .. name, recipe = recipe and "todo-test-" .. recipe, quantity = quantity}
@@ -85,6 +86,20 @@ return function(player)
   value, err = production.expand(task.id, {1}, player, game.tick, task.revision - 1)
   assert(not value and err == "conflict" and store.get().next_id == next_id)
   local children = assert(production.expand(task.id, {1}, player, game.tick, task.revision))
+  local title_request
+  for id, pending in pairs(store.player(player.index).task_titles) do
+    if pending.task_id == children[1].id then title_request = id end
+  end
+  assert(title_request)
+  assert(titles.translated{player_index = player.index, id = title_request, translated = true, result = "Composant traduit"})
+  assert(children[1].title == "Composant traduit")
+  titles.request(player, children[1])
+  for id, pending in pairs(store.player(player.index).task_titles) do
+    if pending.task_id == children[1].id then title_request = id end
+  end
+  assert(tasks.update(children[1].id, {title = "Titre personnalisé"}))
+  titles.translated{player_index = player.index, id = title_request, translated = true, result = "Réponse tardive"}
+  assert(children[1].title == "Titre personnalisé")
   assert(#children == 1 and #tasks.children(task.id) == 1)
   local first = children[1]
   assert(first.parent_id == task.id and first.production.type == "item" and first.production.quantity == 6)
