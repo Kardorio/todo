@@ -1,256 +1,71 @@
-# Factorio Todo Manager
+# Todo Manager
 
-Gestionnaire de tâches indépendant pour **Factorio 2.1**, sans dépendance à un
-service externe ni à un mod de contenu. La V1 gère les tâches ; le lot 2 ajoute
-les objectifs de production et leur décomposition progressive. Le lot 3 ajoute
-un raccourci de création depuis les prototypes survolés dans la Factoriopedia.
+Organisez vos objectifs industriels dans **Factorio 2.1** : tâches, sous-tâches,
+positions et décomposition progressive des recettes. Interfaces en français et en anglais.
 
-## Utilisation
+## Prise en main
 
-- `/todo Augmenter les fondeurs` crée une tâche à la position actuelle du
-  contrôleur, y compris sur la surface consultée en vue distante. Elle est
-  automatiquement épinglée pour son créateur.
-- `/todo` ou l'icône de liste dans la barre commune des mods ouvre la fenêtre complète.
-- Le bouton **+** de la fenêtre crée une tâche principale. Celui d'une ligne
-  prépare une sous-tâche. Les tâches créées dans la fenêtre n'ont pas de position
-  par défaut.
-- La fenêtre principale contient uniquement le listing. Cliquer sur un titre
-  ou sur **+** ouvre une fenêtre distincte d'édition ou d'ajout : titre,
-  description, statut et priorité. **Enregistrer** applique les
-  modifications puis revient au listing ; **Recharger** les abandonne.
-  Fermer l'éditeur revient également au listing sans enregistrer.
-  La création et l'édition sont accessibles à tous les joueurs.
-- Chaque tâche principale et ses descendants sont regroupés dans un cadre.
-  Les compteurs restent compacts et les colonnes entièrement vides de priorité
-  ou de position sont masquées pour laisser davantage de place aux titres.
-- L'ordre des tâches est stable, sans tri manuel. Les nouvelles tâches sont
-  ajoutées à la fin de leur branche ; l'ordre déjà enregistré est conservé.
-  Le parent est déterminé à la création depuis la liste et conservé lors de l'édition.
-  Aucune profondeur maximale n'est imposée au modèle.
-- La case d'une ligne marque la tâche comme terminée ; la décocher la remet à
-  faire. Le formulaire donne accès aux quatre statuts : à faire, en cours,
-  terminé et ignoré. Le compteur porte sur les enfants directs, hors ignorés.
-  Il ne change jamais automatiquement le statut du parent.
-- Le cadre **Zone de la tâche**, à gauche de l'éditeur, affiche une miniature de
-  la position enregistrée, sa surface et ses coordonnées. **Utiliser ma position**
-  capture la position actuelle ; **Retirer la position** l'efface. Ces changements
-  s'appliquent à l'enregistrement. Sur un écran étroit, le cadre passe dans le formulaire.
-  **Voir sur la carte** ouvre la position affichée en vue distante, sans téléporter
-  le personnage. Une surface supprimée est signalée et la tâche est conservée.
-  Une icône de carte apparaît aussi dans le listing et le panneau compact pour
-  les tâches géolocalisées : son infobulle donne la surface et les coordonnées,
-  et un clic ouvre la position. Elle est désactivée si la surface a été supprimée.
-  La navigation conserve la fenêtre ouverte et le brouillon de l'éditeur.
-- La corbeille de tâche demande confirmation. Les enfants sont conservés et
-  remontent au parent de la tâche supprimée, à sa place dans l'ordre des tâches.
+- `/todo Augmenter les fondeurs` crée une tâche à votre position actuelle, avec sa surface, et l'épingle pour vous. La vue distante est prise en compte.
+- `/todo` ou l'icône de liste dans la barre des mods ouvre la gestion des tâches.
+- Le **+** du titre crée une tâche principale ; celui d'une ligne crée une sous-tâche.
+- Cliquez sur un titre pour ouvrir son éditeur. **Enregistrer** applique les modifications ; fermer ou **Recharger** abandonne le brouillon.
+- Épinglez les objectifs que vous souhaitez suivre dans le rappel. La roue crantée permet de régler sa largeur et sa visibilité.
 
-Le panneau compact sert uniquement de rappel : chaque objectif possède sa carte,
-avec une icône plus grande, un titre marqué et un compteur s'il possède des enfants.
-Une barre de progression apparaît lorsqu'au moins un enfant n'est pas ignoré.
-Celle-ci compte les enfants directs hors ignorés et
-ne modifie jamais le statut de l'objectif. Les sous-tâches et leurs icônes sont
-indentées ; les repères `├`, `└` et `│` matérialisent les branches de la hiérarchie.
-Les seules actions sont les liens vers la carte ou la Factoriopedia.
-La couleur rappelle le statut ; le survol affiche le texte complet et les notes.
-La roue crantée de la fenêtre de gestion ouvre une fenêtre dédiée aux paramètres :
-visibilité du rappel et curseur de largeur, appliqués immédiatement. Ce choix
-est conservé par joueur dans la sauvegarde et s'adapte à la taille de l'écran.
-Les actions de gestion restent dans la fenêtre principale, accessible avec `/todo`
-ou l'icône de liste dans la barre des mods. Les branches y sont repliables, tandis que le rappel affiche
-tous les descendants des tâches épinglées. Il disparaît
-automatiquement lorsqu'aucune tâche existante n'est épinglée, puis réapparaît dès
-qu'une tâche est épinglée si sa visibilité est activée. Les épingles
-et branches repliées de la fenêtre principale sont propres à chaque joueur. Le bouton d'épingle d'une ligne
-ajoute ou retire cette tâche du panneau. Épingler un enfant déjà visible sous un
-ancêtre épinglé ne le duplique pas. La barre de titre permet de déplacer le
-panneau ; sa croix le masque. Le bouton d'épingle de la fenêtre de gestion permet
-de le réafficher ou de le masquer ; aucun bouton d'épingle n'est ajouté à la barre des mods.
-La position et la visibilité du panneau sont conservées par joueur.
+## Objectifs de production
 
-Toutes les tâches sont partagées dans la partie, y compris entre forces. Le
-créateur est conservé à titre informatif ; ce n'est pas une restriction d'édition.
-Si une tâche a changé depuis l'ouverture du formulaire, l'enregistrement est
-refusé pour éviter d'écraser une modification concurrente. Le texte saisi reste
-accessible pour être copié avant de recharger les détails.
+Le sélecteur à côté du titre permet de choisir un objet, un fluide ou une recette
+avec la recherche native. Le titre se remplit automatiquement ; un titre personnalisé
+reste conservé. Un clic droit retire l'association sans supprimer la tâche.
 
-## Installation et construction
+Une recette unique est sélectionnée directement. Pour plusieurs alternatives, vous
+choisissez la recette. Le bouton à toque affiche ou masque les recettes non recherchées,
+présentées en rouge. Le livre ouvre la recette choisie dans la Factopédia.
 
-```sh
-./build.sh package
-./build.sh devlink
-```
+Dans les ingrédients, **+** prépare l'ajout du composant en sous-tâche et **✓** annule
+cet ajout avant enregistrement. Les composants déjà ajoutés sont signalés. Chaque
+sous-tâche peut ensuite être décomposée de la même façon, à votre rythme.
+Changer de recette ne réécrit pas les enfants existants.
 
-L'archive est produite dans `dist/`. `devlink` installe un lien vers les sources
-dans `~/.factorio/mods` ; les anciennes archives du même mod sont déplacées dans
-un sous-dossier de sauvegarde pour éviter qu'elles masquent ce lien. Un dossier
-existant ou un lien appartenant à un autre emplacement n'est pas remplacé.
-Redémarrer Factorio, puis activer **Todo Manager** dans le menu des mods.
+Survolez une icône dans la Factopédia, l'inventaire ou une interface et faites
+**Ctrl + Maj + clic gauche** pour préparer une tâche associée au prototype.
+Ce raccourci est configurable dans les contrôles Factorio. L'entrée **Nouvelle tâche**
+de la barre de raccourcis ouvre aussi un formulaire vide.
 
-`./build.sh unlink` retire uniquement le lien appartenant à ce projet.
-`./build.sh clean` retire les archives de ce mod dans `dist/`.
-Le paramètre `--mods-dir /chemin` permet de choisir un autre dossier de mods.
+## Rappel et carte
 
-## Données et mises à jour
+Le rappel présente les objectifs épinglés sous forme de cartes, avec leur hiérarchie
+et leur progression. Ses seules actions ouvrent la carte ou la Factopédia. Il disparaît
+s'il n'y a aucune tâche épinglée. Les épingles et réglages sont propres à chaque joueur.
 
-Les données sont dans `storage.todo_manager`, à l'intérieur de la sauvegarde,
-sans fichier externe. Le schéma 3 conserve `parent_id` et `order` sur les tâches,
-les objectifs de production facultatifs et des préférences indexées par joueur.
-La migration depuis les schémas 1 et 2 initialise les nouveaux champs sans perdre
-les titres ni les positions.
-Elle est appliquée à l'initialisation, au changement de configuration ou avant la
-première utilisation après chargement d'un ancien schéma, y compris lors du
-remplacement du prototype à version identique. Aucune écriture n'est effectuée
-pendant `on_load`.
+L'éditeur propose un aperçu de la zone enregistrée : **Utiliser ma position**,
+**Retirer la position** et **Voir sur la carte**. Les modifications de position sont
+appliquées en enregistrant. La navigation ne téléporte pas le personnage et conserve
+le brouillon. Une surface supprimée ne supprime jamais la tâche.
 
-Une révision distincte de l'interface permet de reconstruire les anciennes
-fenêtres au premier tick après une mise à jour, même à version de mod identique.
-Les tâches, épingles et préférences d'affichage sont conservées.
+## Données et règles
 
-Les arbres sont parcourus avec une pile explicite. L'indentation visuelle est
-plafonnée pour laisser le titre accessible ; la profondeur réelle apparaît dans
-l'infobulle. Les grandes listes disposent d'un défilement horizontal et vertical.
+Toutes les tâches sont partagées entre les joueurs de la partie, y compris entre forces.
+Le créateur est informatif : chacun peut modifier les tâches. Les données et préférences
+suivent la sauvegarde, sans fichier externe. Les données des versions de développement
+sont migrées au chargement.
 
-## Vérification
+Les statuts sont **À faire**, **En cours**, **Terminé** et **Ignoré**. La progression
+compte les enfants directs, hors ignorés, sans terminer automatiquement le parent.
+La suppression demande confirmation et conserve les enfants en les remontant d'un niveau.
+L'ordre est stable, sans tri manuel. La profondeur du modèle n'est pas limitée.
 
-```sh
-./build.sh check
-FACTORIO_BIN=/chemin/vers/factorio-autonome/bin/x64/factorio ./build.sh test
-FACTORIO_GUI_BIN=/chemin/vers/factorio-autonome-graphique/bin/x64/factorio python3 tests/visual.py
-```
+Les recettes sont lues dans les prototypes du jeu et des mods. Les quantités affichées
+sont théoriques ; le mod ne simule ni machines, ni productivité, ni équilibrage des coproduits.
+Il n'ajoute jamais automatiquement toute une chaîne de production.
 
-`check` vérifie la syntaxe avec `liblua5.2.so.0` et la cohérence des traductions
-françaises et anglaises. Aucun paquet Python externe n'est nécessaire.
+## Installation depuis les sources
 
-Les tests moteur créent une vraie sauvegarde avec des tâches et préférences,
-puis la rechargent dans Factorio 2.1 autonome. Ils exercent le modèle, une chaîne
-profonde, la migration, les événements de l'interface, les brouillons et conflits,
-les déplacements, les épingles et les positions, dont les surfaces supprimées.
-Les données de test et de jeu sont isolées dans un répertoire temporaire. Aucun
-moteur Steam n'est lancé. `FACTORIO_BIN` est obligatoire pour ce test.
+Exécutez `./build.sh package`, puis placez `dist/todo-manager_1.0.0.zip` dans votre
+dossier de mods et activez **Todo Manager**. Redémarrez Factorio après installation
+pour charger les prototypes de raccourci.
 
-Le test graphique utilise un client autonome Factorio 2.1, avec rendu hors écran
-et profil temporaire, sans démarrer Steam ni utiliser les sauvegardes du joueur.
-Il produit neuf vraies captures dans `tests/visual-output/` : le rappel compact,
-la fenêtre de gestion, la Factoriopedia, le formulaire prérempli, l'éditeur avec
-aperçu de position, une sous-tâche ajoutée depuis les ingrédients avec son titre traduit
-une recette verrouillée affichée en rouge avec des prototypes de test isolés,
-la recette ouverte dans la Factopédia et la fenêtre dédiée aux paramètres.
-Sans variable `FACTORIO_GUI_BIN`, il cherche le client
-dans `.tools/factorio-standalone/bin/x64/factorio`.
-Une session avec plusieurs clients et le transfert d'une
-sauvegarde sur un autre ordinateur ne sont pas couverts par le test moteur.
-Aucun contrôle de couverture ni pré-commit n'est configuré.
+Les archives sont générées localement et ne sont pas versionnées.
+Voir le [guide de développement](docs/developpement.md) pour les tests et le lien de développement,
+et la [présentation du portail](docs/mod-portal.md) pour le texte de publication.
 
-## Lot 2 : objectifs de production
-
-Dans l'éditeur, la case à côté du titre ouvre le sélecteur natif de Factorio,
-avec ses catégories d'icônes et sa recherche habituelle pour les objets, fluides
-et recettes. Les autres types de signaux sont refusés sans modifier l'objectif.
-Le choix remplit automatiquement un titre vide et actualise un titre précédemment
-généré ; un titre personnalisé est conservé. La cible et la recette ne sont
-enregistrées qu'avec le reste du formulaire. Un clic droit sur la case retire
-l'association sans supprimer la tâche ni ses sous-tâches.
-
-Le choix de recette apparaît directement sous le titre et le composant. Lorsqu'une
-seule recette existe, elle est sélectionnée automatiquement et le menu est masqué.
-Lorsqu'il existe plusieurs recettes, choisir explicitement une alternative.
-Les recettes verrouillées sont affichées en rouge. Le bouton à toque de la
-Factoriopedia, dans la barre de titre de l'éditeur juste avant la croix, reprend son infobulle « Afficher les non-recherchées »
-et son fonctionnement : activé en jaune, il affiche les recettes verrouillées ;
-désactivé, il les masque. Ce filtre est mémorisé
-par joueur. Filtrer ne change jamais la recette sélectionnée et ne choisit pas
-une alternative à votre place. Les recettes cachées ne figurent pas dans cette liste.
-Pour une recette choisie directement, celle-ci est déjà explicite.
-Une infobulle « (i) » accompagne le menu uniquement si la tâche possède déjà des
-sous-tâches : changer la recette ne les modifie pas. Un cadre à droite du formulaire
-présente directement les ingrédients, leurs icônes et leurs quantités. Il apparaît
-uniquement lorsqu'un objectif de production est associé ; sur écran étroit, il
-passe dans le formulaire. Les ingrédients restent visibles sans commande de repli.
-L'icône de livre ouvre la recette sélectionnée dans la Factopédia, en conservant le brouillon.
-Le bouton `+` d'un ingrédient prépare son ajout en sous-tâche ; `✓` annule cet
-ajout tant que le formulaire n'est pas enregistré. **Enregistrer** crée les
-sous-tâches sélectionnées en même temps que l'objectif. Les composants déjà
-ajoutés sont cochés et désactivés. Changer de cible ou de recette annule les
-ajouts encore en brouillon. Les nouvelles sous-tâches prennent le nom localisé
-du prototype, fourni par le jeu ; une traduction tardive préserve les titres modifiés manuellement.
-
-L'éditeur ne propose pas de quantité cible. Un nouvel objectif part d'une
-fabrication de la recette choisie. Les quantités des composants et celles des
-objectifs déjà enregistrés sont conservées lors d'une modification.
-
-Les besoins sont calculés par fabrication entière. Le rendement moyen officiel
-est utilisé pour les résultats aléatoires et les résultats multiples ; l'estimation
-n'est pas une garantie de production. Aucun bonus de productivité ou de qualité,
-choix de machine, vitesse de production ou équilibrage des coproduits n'est simulé.
-Les ingrédients sont des besoins bruts, y compris lorsqu'un catalyseur revient
-parmi les résultats. Les contraintes de température et de qualité des ingrédients
-sont affichées dans la décomposition ; le joueur choisit sa chaîne et ses machines.
-
-Dans la liste de gestion, cliquer sur le titre ou sur l'icône de production ouvre
-le même éditeur. Les composants sont ajoutés depuis ses boutons `+`, sans fenêtre
-de décomposition distincte. Dans le rappel, l'icône ouvre la page Factoriopedia.
-Chaque nouvelle sous-tâche conserve sa quantité, mais aucune recette ne lui est
-attribuée automatiquement. Elle peut ensuite être développée de la même façon.
-
-Un composant déjà ajouté depuis cette recette n'est pas dupliqué. Ses modifications
-manuelles sont conservées. Changer la recette ou la quantité du parent ne modifie
-ni ne supprime les enfants déjà créés ; ils doivent être ajustés manuellement.
-
-Les associations sont conservées dans la sauvegarde, au schéma 3. Le passage des
-schémas 1 et 2 au schéma 3 conserve les anciennes tâches, positions, statuts,
-épingles et préférences. Si un mod retiré emporte un prototype ou une recette,
-l'association reste enregistrée, la tâche reste éditable et la décomposition
-signale que le prototype n'est plus disponible.
-
-Les essais chargent aussi un mod de test fournissant ses propres objets, fluides
-et recettes alternatives, probabilistes et avec contraintes de température. Ils
-vérifient la sélection, les quantités, les doublons, les conflits, le développement
-progressif et le passage d'une véritable sauvegarde V1 au nouveau schéma.
-Ces prototypes de test ne sont pas inclus dans l'archive distribuable.
-
-## Lot 3 : ajout depuis la Factoriopedia
-
-Survoler une icône d'objet, de fluide ou de recette dans la Factoriopedia, puis
-faire **Ctrl + Maj + clic gauche**. Le mod ferme la Factoriopedia et ouvre une nouvelle
-tâche avec son icône et son nom localisé. Le raccourci est configurable dans les
-contrôles Factorio. Le geste fonctionne dans les deux panneaux de la Factopedia,
-dans l'inventaire, dans les interfaces de mods et sur une entité du monde associée
-à un objet de placement unique. Aucune restriction de contexte ou de qualité
-n'est appliquée au prototype survolé. Les gestes natifs avec Maj seul ne changent pas.
-
-Une entrée **Nouvelle tâche** est également disponible dans la configuration de
-la barre de raccourcis Factorio. Son bouton ouvre un formulaire vide, sans objet
-ni position imposés. Il préserve tout brouillon déjà ouvert.
-
-**Enregistrer** crée la tâche et l'épingle pour son créateur. Fermer le formulaire
-l'abandonne. Aucune position n'est capturée automatiquement ; les commandes de
-géolocalisation de l'éditeur permettent de l'ajouter. Un formulaire de tâche ou de
-décomposition déjà ouvert est conservé et le nouvel ajout est refusé.
-
-Une recette survolée explicitement est conservée. Pour un objet ou un fluide, les
-règles habituelles s'appliquent : recette unique sélectionnée directement, choix
-manuel en cas d'alternatives. Une entité est convertie vers son objet de placement
-uniquement s'il est unique ; aucun objet n'est choisi en cas d'ambiguïté.
-
-L'API ne fournit pas la page Factoriopedia active ni d'ancrage pour y injecter un
-bouton. L'intégration utilise le [prototype survolé fourni aux raccourcis](https://lua-api.factorio.com/latest/prototypes/CustomInputPrototype.html#include_selected_prototype),
-pas la page entière : il faut viser une icône. Le contexte recette ne peut être
-conservé que si l'icône survolée est elle-même une recette. Le module d'intégration
-reste indépendant et ne modifie aucun élément de l'interface interne du jeu.
-
-Ce lot ajoute un prototype de raccourci : **redémarrer Factorio** après la mise à
-jour. `/c game.reload_mods()` ne recharge pas ce prototype.
-
-Un test supplémentaire exerce le vrai survol et le vrai geste Ctrl + Maj + clic dans un
-écran virtuel isolé, avec le client autonome, Xvfb et xdotool :
-
-```sh
-python3 tests/factopedia_native.py
-```
-
-Définir `FACTORIO_GUI_BIN` ou `XVFB_BIN` si ces exécutables ne sont pas aux
-emplacements par défaut. Le test utilise une résolution de 1280 × 900 et une
-échelle de 125 % pour viser l'icône de locomotive de la grille native Factorio 2.1.
-Il vérifie l'ajout depuis une pile d'inventaire, la fabrication native avec Maj seul,
-puis l'ajout depuis la grille gauche et un ingrédient à droite dans la Factopedia. Il produit les captures
-`todo-native-before.png` et `todo-native-after.png` dans `tests/visual-output/`.
+Licence [MIT](LICENSE) — Kardorio.
