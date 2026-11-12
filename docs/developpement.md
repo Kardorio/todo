@@ -43,6 +43,9 @@ Xvfb et `xdotool`. Tous deux utilisent un profil temporaire et le moteur autonom
 sans ouvrir Steam ni les sauvegardes du joueur. `XVFB_BIN` permet de choisir
 l'exécutable Xvfb pour le test des gestes natifs.
 Les captures et journaux sont écrits dans `tests/visual-output/`, ignoré par Git.
+Définir `TODO_VISUAL_LOCALE=en` pour produire les captures du portail en anglais ;
+le scénario visuel utilise le français par défaut. Les trois captures retenues sont
+copiées dans `docs/images/` pour accompagner la présentation du portail.
 
 Les tests moteur couvrent sauvegarde/rechargement, migrations des schémas 1 et 2,
 arbres profonds, statuts, épingles par joueur, conflits d'édition, surfaces supprimées,
@@ -72,7 +75,13 @@ La recette n'est directement connue que si le prototype survolé est une recette
 1. Mettre à jour `info.json` et `changelog.txt`.
 2. Exécuter les vérifications et relire les captures.
 3. Construire l'archive avec `./build.sh package` et vérifier son contenu.
-4. Utiliser `docs/mod-portal.md` comme description du portail ; téléverser les captures choisies séparément.
+4. Utiliser `docs/mod-portal.md` comme description anglaise du portail. Les captures utilisent des URL GitHub directes sur `master` : vérifier leur accès sans authentification avant publication. Si le dépôt reste privé, téléverser les captures sur le portail et adapter les URL.
+
+`thumbnail.png` est la vignette 144 × 144 incluse dans le mod. Son original se trouve
+dans `docs/images/portal-icon.png`. Il a été généré avec l'outil intégré imagegen,
+puis réduit pour la distribution. Consigne utilisée : presse-papiers industriel
+en métal sombre, trois lignes de checklist, deux coches ambrées, petit engrenage,
+composition carrée centrée et lisible à petite taille, sans texte ni logo Factorio.
 
 Le dépôt peut rester privé : ne pas utiliser de liens GitHub privés pour les images
 publiques du portail. La construction et une fusion Git ne publient rien sur le portail.

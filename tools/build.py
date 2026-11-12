@@ -13,7 +13,7 @@ from validate import validate
 
 ROOT = Path(__file__).resolve().parents[1]
 FILES = ("info.json", "data.lua", "control.lua", "scripts", "gui", "integrations", "locale",
-         "README.md", "LICENSE", "changelog.txt", "docs")
+         "README.md", "LICENSE", "changelog.txt", "thumbnail.png", "docs")
 
 
 def metadata():

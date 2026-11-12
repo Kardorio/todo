@@ -5,5 +5,5 @@
   "author": "Kardorio",
   "factorio_version": "2.1",
   "dependencies": ["base >= 2.1.0"],
-  "description": "Organisez vos objectifs industriels : tâches et sous-tâches, rappels personnels, positions et décomposition progressive des recettes."
+  "description": "Organize your factory goals with tasks and subtasks, personal reminders, saved locations and step-by-step recipe breakdowns."
 }
