@@ -9,7 +9,7 @@ local factopedia = require("integrations.factopedia")
 local titles = require("scripts.task_titles")
 local settings = require("gui.settings_window")
 local M = {}
-local gui_revision = 23
+local gui_revision = 24
 
 local function open_list(player)
   settings.close(player)

@@ -32,6 +32,7 @@ end
 function M.refresh_info(pane)
   local row = M.element(pane).todo_recipe_row
   row.todo_recipe_info.visible = row.visible and tasks.has_children(pane.tags.task_id)
+  row.todo_recipe.style.width = row.todo_recipe_info.visible and 218 or 238
 end
 
 function M.refresh(pane, player)
@@ -81,7 +82,9 @@ function M.refresh(pane, player)
   if draft then plan, err = production.plan{production = draft} end
   fields.todo_ingredient_heading.visible = plan ~= nil
   fields.todo_ingredient_heading.todo_ingredient_count.caption = plan and {"todo.production-ingredients", #plan.ingredients} or ""
-  fields.todo_ingredient_heading.todo_recipe_factopedia.enabled = plan ~= nil
+  recipe_row.todo_recipe_factopedia.enabled = plan ~= nil
+  fields.todo_target_header.todo_recipe_factopedia.visible = not recipe_row.visible and plan ~= nil
+  fields.todo_target_header.todo_target_name.style.width = recipe_row.visible and 270 or 234
   fields.todo_plan_error.caption = err and {"todo.error-" .. err} or ""
   local list = fields.todo_ingredients
   local queued = pane.tags.queued_ingredients or {}
@@ -142,17 +145,18 @@ function M.render(pane, value, player)
   local label = heading.add{type = "label", name = "todo_target_name", style = "heading_2_label"}
   label.style.single_line = false
   label.style.width = 270
+  common.sprite(heading, "recipe_factopedia", "side_menu_factoriopedia_icon", nil, {"todo.open-recipe-factopedia"})
   local recipe_row = fields.add{type = "flow", name = "todo_recipe_row", direction = "horizontal"}
   recipe_row.style.vertical_align = "center"
   local recipes = recipe_row.add{type = "drop-down", name = "todo_recipe", items = {{"todo.production-choose-recipe"}}, selected_index = 1,
     tags = {todo_action = "production_recipe"}}
-  recipes.style.width = 242
+  recipes.style.width = 238
   recipe_row.add{type = "label", name = "todo_recipe_info", caption = "(i)", tooltip = {"todo.production-children-unchanged"}}
+  common.sprite(recipe_row, "recipe_factopedia", "side_menu_factoriopedia_icon", nil, {"todo.open-recipe-factopedia"})
   local ingredient_heading = fields.add{type = "flow", name = "todo_ingredient_heading", direction = "horizontal"}
   ingredient_heading.style.vertical_align = "center"
   local count = ingredient_heading.add{type = "label", name = "todo_ingredient_count", style = "heading_2_label"}
   count.style.width = 234
-  common.sprite(ingredient_heading, "recipe_factopedia", "side_menu_factoriopedia_icon", nil, {"todo.open-recipe-factopedia"})
   local list = fields.add{type = "scroll-pane", name = "todo_ingredients", direction = "vertical"}
   list.style.width = 270
   list.style.maximal_height = ingredient_height(player)

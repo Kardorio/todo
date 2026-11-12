@@ -144,7 +144,7 @@ local function tick(event)
   elseif storage.todo_visual_phase == 15 and event.tick >= storage.todo_visual_next_tick then
     local pane = player.gui.screen.todo_manager_editor.todo_body.todo_editor
     pane.todo_description.text = "Brouillon de la recette conservé"
-    editor.production_changed(player, production_fields.element(pane).todo_ingredient_heading.todo_recipe_factopedia)
+    editor.production_changed(player, production_fields.element(pane).todo_recipe_row.todo_recipe_factopedia)
     storage.todo_visual_phase = 16
     storage.todo_visual_next_tick = event.tick + 30
   elseif storage.todo_visual_phase == 16 and event.tick >= storage.todo_visual_next_tick then
