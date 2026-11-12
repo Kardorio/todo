@@ -5,20 +5,20 @@ local panel = require("gui.compact_panel")
 local editor = require("gui.task_editor")
 local common = require("gui.common")
 local locations = require("scripts.location_manager")
-local selector = require("gui.production_selector")
 local factopedia = require("integrations.factopedia")
 local titles = require("scripts.task_titles")
+local settings = require("gui.settings_window")
 local M = {}
-local gui_revision = 22
+local gui_revision = 23
 
 local function open_list(player)
-  selector.close(player)
+  settings.close(player)
   editor.close(player)
   window.open(player)
 end
 
 local function open_editor(player, id, parent_id)
-  selector.close(player)
+  settings.close(player)
   window.close(player)
   editor.open(player, id, parent_id)
 end
@@ -46,7 +46,9 @@ function M.initialize()
       window.open(player)
     end
     editor.close(player)
-    selector.close(player)
+    settings.close(player)
+    local old_production = player.gui.screen.todo_manager_production
+    if old_production then old_production.destroy() end
     local old_picker = player.gui.screen.todo_manager_target_picker
     if old_picker then old_picker.destroy() end
     store.player(player.index).target_picker = nil
@@ -102,7 +104,7 @@ function M.command(command)
 end
 
 local function open_hover_target(player, kind, name)
-  if player.gui.screen.todo_manager_editor or player.gui.screen.todo_manager_production then
+  if player.gui.screen.todo_manager_editor then
     editor.error(player, "draft_open")
     player.print({"todo.error-draft_open"})
     return
@@ -146,12 +148,11 @@ function M.clicked(event)
   if action == "open" then open_list(player)
   elseif action == "close" then window.close(player)
   elseif action == "close_editor" then open_list(player)
-  elseif action == "preview_ingredients" or action == "filter_recipes" or action == "queue_ingredient" then
+  elseif action == "recipe_factopedia" or action == "filter_recipes" or action == "queue_ingredient" then
     editor.production_changed(player, element)
   elseif action == "toggle_panel" then panel.toggle(player)
-  elseif action == "toggle_panel_settings" then
-    local frame = player.gui.screen.todo_manager_window
-    frame.todo_panel_settings.visible = not frame.todo_panel_settings.visible
+  elseif action == "open_settings" then window.close(player) settings.open(player)
+  elseif action == "close_settings" then open_list(player)
   elseif action == "narrow_panel" then panel.change_width(player, -64)
   elseif action == "widen_panel" then panel.change_width(player, 64)
   elseif action == "new" then open_editor(player)
@@ -184,12 +185,7 @@ function M.clicked(event)
   elseif action == "location_clear" then editor.location(player, true)
   elseif action == "location_go" then editor.navigate(player)
   elseif action == "decompose" then
-    if player.gui.screen.todo_manager_editor then editor.error(player, "save_before_decompose")
-    elseif tasks.get(id) then window.close(player) selector.open(player, id) end
-  elseif action == "close_production" then open_list(player)
-  elseif action == "production_edit" then open_editor(player, id)
-  elseif action == "production_add" then
-    if selector.add(player) then open_list(player) M.refresh() end
+    if tasks.get(id) then open_editor(player, id) end
   elseif action == "show_factoriopedia" then factopedia.open(player, tasks.get(id))
   elseif action == "show_location" then
     local task = tasks.get(id)
@@ -205,7 +201,7 @@ end
 function M.checked(event)
   local player, element, tags = event_context(event)
   if not player then return end
-  if tags.todo_action == "production_ingredient" then selector.selection_changed(player) return end
+  if tags.todo_action == "settings_panel_visible" then settings.changed(player, element) return end
   if tags.todo_action ~= "done" then return end
   local task = tasks.get(tags.task_id)
   if not task then M.refresh() return end
@@ -223,7 +219,7 @@ function M.closed(event)
   elseif editor.is_window(event.element) then
     local player = game.get_player(event.player_index)
     if player then open_list(player) end
-  elseif selector.is_window(event.element) then
+  elseif event.element and event.element.valid and event.element.name == "todo_manager_settings" then
     local player = game.get_player(event.player_index)
     if player then open_list(player) end
   end
@@ -232,6 +228,11 @@ end
 function M.production_changed(event)
   local player, element = event_context(event)
   if player then editor.production_changed(player, element) end
+end
+
+function M.setting_changed(event)
+  local player, element = event_context(event)
+  if player then settings.changed(player, element) end
 end
 
 function M.translated(event)
@@ -259,6 +260,7 @@ function M.resized(event)
   if player then
     window.resize(player)
     editor.resize(player)
+    if player.gui.screen.todo_manager_settings then settings.open(player) end
     panel.resized(player)
   end
 end

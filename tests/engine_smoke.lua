@@ -55,6 +55,7 @@ local function run_checks()
     on_gui_elem_changed = runtime.production_changed, on_gui_selection_state_changed = runtime.production_changed,
     on_gui_text_changed = runtime.production_changed,
     on_string_translated = runtime.translated,
+    on_gui_value_changed = runtime.setting_changed,
     on_lua_shortcut = runtime.shortcut,
     on_gui_location_changed = runtime.moved, on_player_display_resolution_changed = runtime.resized,
     on_player_display_scale_changed = runtime.resized, on_surface_deleted = runtime.refresh
@@ -167,17 +168,31 @@ local function run_checks()
   end
   assert(#panel().todo_panel_tree.children == 2)
   local original_width = panel().todo_panel_tree.task_1.todo_title.style.minimal_width
-  click(find(frame(), "todo_toggle_panel_settings"))
-  assert(frame().todo_panel_settings.visible)
-  click(find(frame(), "todo_widen_panel"))
+  click(find(frame(), "todo_open_settings"))
+  local settings = player.gui.screen.todo_manager_settings
+  assert(settings and not frame())
+  local slider = settings.todo_settings_body.todo_panel_width
+  local visible = settings.todo_settings_body.todo_panel_visible
+  visible.state = false
+  runtime.checked{player_index = player.index, element = visible}
+  assert(not prefs.panel_visible and not panel())
+  visible.state = true
+  runtime.checked{player_index = player.index, element = visible}
+  assert(prefs.panel_visible and panel())
+  prefs.panel_width = 10000
+  slider.slider_value = 444
+  runtime.setting_changed{player_index = player.index, element = slider}
   assert(prefs.panel_width == 444 and panel().todo_panel_tree.style.minimal_width == 444)
   assert(panel().todo_panel_tree.task_1.todo_title.style.minimal_width == original_width + 64)
   assert(panel().todo_panel_tree.task_2.todo_indent.style.minimal_width == 24)
   click(find(panel(), "todo_toggle_panel"))
   panel_renderer.toggle(player)
   assert(panel().todo_panel_tree.style.minimal_width == 444)
-  click(find(frame(), "todo_narrow_panel"))
+  slider.slider_value = 380
+  runtime.setting_changed{player_index = player.index, element = slider}
   assert(prefs.panel_width == 380)
+  click(find(settings, "todo_close_settings"))
+  assert(frame() and not player.gui.screen.todo_manager_settings)
   panel_renderer.change_width(player, -10000)
   assert(prefs.panel_width == 300)
   panel_renderer.change_width(player, 10000)
@@ -382,7 +397,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 22)
+    assert(store.get().gui_revision == 23)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)

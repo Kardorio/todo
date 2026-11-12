@@ -139,6 +139,30 @@ local function tick(event)
   elseif storage.todo_visual_phase == 14 and event.tick >= storage.todo_visual_next_tick then
     game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
       path = "todo-locked-recipe.png", force_render = true}
+    storage.todo_visual_phase = 15
+    storage.todo_visual_next_tick = event.tick + 30
+  elseif storage.todo_visual_phase == 15 and event.tick >= storage.todo_visual_next_tick then
+    local pane = player.gui.screen.todo_manager_editor.todo_body.todo_editor
+    pane.todo_description.text = "Brouillon de la recette conservé"
+    editor.production_changed(player, production_fields.element(pane).todo_ingredient_heading.todo_recipe_factopedia)
+    storage.todo_visual_phase = 16
+    storage.todo_visual_next_tick = event.tick + 30
+  elseif storage.todo_visual_phase == 16 and event.tick >= storage.todo_visual_next_tick then
+    assert(player.gui.screen.todo_manager_editor.todo_body.todo_editor.todo_description.text == "Brouillon de la recette conservé")
+    game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
+      path = "todo-recipe-factopedia.png", force_render = true}
+    storage.todo_visual_phase = 17
+    storage.todo_visual_next_tick = event.tick + 30
+  elseif storage.todo_visual_phase == 17 and event.tick >= storage.todo_visual_next_tick then
+    player.close_factoriopedia_gui()
+    runtime.command{player_index = player.index}
+    runtime.clicked{player_index = player.index, element = player.gui.screen.todo_manager_window.children[1].todo_open_settings}
+    storage.todo_visual_phase = 18
+    storage.todo_visual_next_tick = event.tick + 30
+  elseif storage.todo_visual_phase == 18 and event.tick >= storage.todo_visual_next_tick then
+    assert(player.gui.screen.todo_manager_settings)
+    game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
+      path = "todo-settings.png", force_render = true}
     helpers.write_file("todo-visual-result.txt", "TODO VISUAL OK\n", false)
     storage.todo_visual_phase = nil
   end

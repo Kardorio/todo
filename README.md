@@ -45,8 +45,8 @@ indentées et liens vers la carte ou la Factoriopedia lorsqu'une cible est assoc
 Les icônes occupent deux colonnes fixes ; seuls les titres des sous-tâches sont décalés.
 Les repères `├`, `└` et `│` matérialisent les branches de la hiérarchie.
 La couleur rappelle le statut ; le survol affiche le texte complet et les notes.
-Le réglage **Largeur du rappel**, accessible depuis l'icône de réglage dans la fenêtre de gestion,
-ajuste la largeur du rappel ; ce choix
+La roue crantée de la fenêtre de gestion ouvre une fenêtre dédiée aux paramètres :
+visibilité du rappel et curseur de largeur, appliqués immédiatement. Ce choix
 est conservé par joueur dans la sauvegarde et s'adapte à la taille de l'écran.
 Les actions de gestion restent dans la fenêtre principale, accessible avec `/todo`
 ou l'icône de liste dans la barre des mods. Les branches y sont repliables, tandis que le rappel affiche
@@ -123,10 +123,11 @@ moteur Steam n'est lancé. `FACTORIO_BIN` est obligatoire pour ce test.
 
 Le test graphique utilise un client autonome Factorio 2.1, avec rendu hors écran
 et profil temporaire, sans démarrer Steam ni utiliser les sauvegardes du joueur.
-Il produit sept vraies captures dans `tests/visual-output/` : le rappel compact,
+Il produit neuf vraies captures dans `tests/visual-output/` : le rappel compact,
 la fenêtre de gestion, la Factoriopedia, le formulaire prérempli, l'éditeur avec
 aperçu de position, une sous-tâche ajoutée depuis les ingrédients avec son titre traduit
-et une recette verrouillée affichée en rouge avec des prototypes de test isolés.
+une recette verrouillée affichée en rouge avec des prototypes de test isolés,
+la recette ouverte dans la Factopédia et la fenêtre dédiée aux paramètres.
 Sans variable `FACTORIO_GUI_BIN`, il cherche le client
 dans `.tools/factorio-standalone/bin/x64/factorio`.
 Une session avec plusieurs clients et le transfert d'une
@@ -157,8 +158,8 @@ Une infobulle « (i) » accompagne le menu uniquement si la tâche possède déj
 sous-tâches : changer la recette ne les modifie pas. Un cadre à droite du formulaire
 présente directement les ingrédients, leurs icônes et leurs quantités. Il apparaît
 uniquement lorsqu'un objectif de production est associé ; sur écran étroit, il
-passe dans le formulaire. Cliquer sur son
-en-tête replie ou développe la liste et conserve le formulaire en cours de saisie.
+passe dans le formulaire. Les ingrédients restent visibles sans commande de repli.
+L'icône de livre ouvre la recette sélectionnée dans la Factopédia, en conservant le brouillon.
 Le bouton `+` d'un ingrédient prépare son ajout en sous-tâche ; `✓` annule cet
 ajout tant que le formulaire n'est pas enregistré. **Enregistrer** crée les
 sous-tâches sélectionnées en même temps que l'objectif. Les composants déjà
@@ -178,12 +179,11 @@ Les ingrédients sont des besoins bruts, y compris lorsqu'un catalyseur revient
 parmi les résultats. Les contraintes de température et de qualité des ingrédients
 sont affichées dans la décomposition ; le joueur choisit sa chaîne et ses machines.
 
-L'icône de la cible ouvre **Décomposer les composants** dans la fenêtre principale,
-et sa page Factoriopedia dans le panneau de rappel. Cocher uniquement les
-composants à transformer en sous-tâches, puis choisir **Ajouter les composants
-sélectionnés**. Les autres restent simplement des ingrédients, sans création de
-tâche. Chaque nouvelle sous-tâche conserve sa quantité, mais aucune recette ne lui
-est attribuée automatiquement. Elle peut ensuite être développée de la même façon.
+Dans la liste de gestion, cliquer sur le titre ou sur l'icône de production ouvre
+le même éditeur. Les composants sont ajoutés depuis ses boutons `+`, sans fenêtre
+de décomposition distincte. Dans le rappel, l'icône ouvre la page Factoriopedia.
+Chaque nouvelle sous-tâche conserve sa quantité, mais aucune recette ne lui est
+attribuée automatiquement. Elle peut ensuite être développée de la même façon.
 
 Un composant déjà ajouté depuis cette recette n'est pas dupliqué. Ses modifications
 manuelles sont conservées. Changer la recette ou la quantité du parent ne modifie

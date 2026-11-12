@@ -79,16 +79,15 @@ function M.refresh(pane, player)
   local draft, err = M.read(pane)
   local plan
   if draft then plan, err = production.plan{production = draft} end
-  fields.todo_preview.visible = plan ~= nil
-  fields.todo_preview.caption = plan and {"", "[img=virtual-signal/",
-    pane.tags.ingredients_open ~= false and "down-arrow" or "right-arrow", "]  ",
-    {"todo.production-ingredients", #plan.ingredients}} or ""
+  fields.todo_ingredient_heading.visible = plan ~= nil
+  fields.todo_ingredient_heading.todo_ingredient_count.caption = plan and {"todo.production-ingredients", #plan.ingredients} or ""
+  fields.todo_ingredient_heading.todo_recipe_factopedia.enabled = plan ~= nil
   fields.todo_plan_error.caption = err and {"todo.error-" .. err} or ""
   local list = fields.todo_ingredients
   local queued = pane.tags.queued_ingredients or {}
   local existing = plan and production.existing_children(pane.tags.task_id, plan.recipe) or {}
   list.clear()
-  list.visible = plan ~= nil and pane.tags.ingredients_open ~= false
+  list.visible = plan ~= nil
   if plan and list.visible then
     for _, ingredient in ipairs(plan.ingredients) do
       local row = list.add{type = "flow", name = "ingredient_" .. ingredient.index}
@@ -149,11 +148,11 @@ function M.render(pane, value, player)
     tags = {todo_action = "production_recipe"}}
   recipes.style.width = 242
   recipe_row.add{type = "label", name = "todo_recipe_info", caption = "(i)", tooltip = {"todo.production-children-unchanged"}}
-  local preview = fields.add{type = "button", name = "todo_preview", style = "list_box_item",
-    tooltip = {"todo.production-toggle-ingredients"}, tags = {todo_action = "preview_ingredients"}}
-  preview.style.width = 270
-  preview.style.horizontal_align = "left"
-  preview.style.font = "default-bold"
+  local ingredient_heading = fields.add{type = "flow", name = "todo_ingredient_heading", direction = "horizontal"}
+  ingredient_heading.style.vertical_align = "center"
+  local count = ingredient_heading.add{type = "label", name = "todo_ingredient_count", style = "heading_2_label"}
+  count.style.width = 234
+  common.sprite(ingredient_heading, "recipe_factopedia", "side_menu_factoriopedia_icon", nil, {"todo.open-recipe-factopedia"})
   local list = fields.add{type = "scroll-pane", name = "todo_ingredients", direction = "vertical"}
   list.style.width = 270
   list.style.maximal_height = ingredient_height(player)
@@ -167,13 +166,6 @@ end
 function M.layout(pane, player)
   if M.element(pane).parent ~= host(pane, player) then M.render(pane, pane.tags.production, player) end
   M.element(pane).todo_ingredients.style.maximal_height = ingredient_height(player)
-end
-
-function M.toggle_ingredients(pane, player)
-  local tags = pane.tags
-  tags.ingredients_open = tags.ingredients_open == false
-  pane.tags = tags
-  M.refresh(pane, player)
 end
 
 function M.set_target(pane, player, kind, name, label)

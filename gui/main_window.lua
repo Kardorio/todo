@@ -53,17 +53,8 @@ function M.open(player)
     local header = common.header(frame, {"todo.title"})
     common.sprite(header, "new", "add", nil, {"todo.new-help"})
     common.sprite(header, "toggle_panel", "track_button", nil, {"todo.toggle-panel"})
-    common.sprite(header, "toggle_panel_settings", "expand", nil, {"todo.panel-width"})
+    common.sprite(header, "open_settings", "side_menu_menu_icon", nil, {"todo.settings"})
     common.sprite(header, "close", "close", nil, {"todo.close"})
-    local settings = frame.add{type = "flow", name = "todo_panel_settings", direction = "horizontal"}
-    settings.visible = false
-    settings.style.vertical_align = "center"
-    settings.add{type = "label", caption = {"todo.panel-width"}}
-    for _, action in ipairs({"narrow_panel", "widen_panel"}) do
-      local button = common.button(settings, action, action == "narrow_panel" and "−" or "+", nil, {"todo." .. action})
-      button.style = "tool_button"
-      button.style.size = {28, 28}
-    end
     frame.add{type = "scroll-pane", name = "todo_tree", direction = "vertical"}
     frame.auto_center = true
   end

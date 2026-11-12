@@ -83,12 +83,10 @@ return function(player)
   assert(not created.position and not created.surface_index and store.player(player.index).pinned[created.id])
   local row = player.gui.screen.todo_manager_window.todo_tree["task_" .. created.id]
   runtime.clicked{player_index = player.index, element = row.todo_decompose}
-  local selection = player.gui.screen.todo_manager_production
-  local checkbox = selection.todo_ingredients.ingredient_1.todo_select
-  checkbox.state = true
-  runtime.checked{player_index = player.index, element = checkbox}
+  local selection = frame()
+  pane().todo_description.text = "Brouillon conservé"
   invoke("item", "todo-test-goal")
-  assert(player.gui.screen.todo_manager_production == selection and checkbox.state and not frame())
+  assert(frame() == selection and pane().todo_description.text == "Brouillon conservé")
   runtime.closed{player_index = player.index, element = selection}
   invoke("fluid", "todo-test-fluid")
   assert(pane().tags.production.type == "fluid" and not pane().tags.production.recipe)

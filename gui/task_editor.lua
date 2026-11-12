@@ -232,7 +232,10 @@ function M.production_changed(player, element)
     local ok, err = production_fields.target_changed(pane, player, element)
     if not ok then M.error(player, err) end
   elseif action == "production_recipe" then production_fields.recipe_changed(pane, player)
-  elseif action == "preview_ingredients" then production_fields.toggle_ingredients(pane, player)
+  elseif action == "recipe_factopedia" then
+    local value = pane.tags.production
+    local recipe = value and value.recipe and prototypes.recipe[value.recipe]
+    if recipe then common.preserve_window(player, function() player.open_factoriopedia_gui(recipe) end) end
   elseif action == "filter_recipes" then production_fields.filter_recipes(pane, player)
   elseif action == "queue_ingredient" then production_fields.queue_ingredient(pane, player, element.tags.ingredient_index)
   elseif action == "production_title" then production_fields.title_changed(pane)

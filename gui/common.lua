@@ -54,6 +54,7 @@ end
 function M.owns(element)
   while element and element.valid do
     if element.name == "todo_manager_window" or element.name == "todo_manager_panel"
+      or element.name == "todo_manager_settings"
       or element.name == "todo_manager_editor"
       or element.name == "todo_manager_production"
       or element.name == "todo_manager_target_picker"

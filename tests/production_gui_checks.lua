@@ -24,7 +24,6 @@ return function(player)
   end
   local function list() return player.gui.screen.todo_manager_window.todo_tree end
   local function pane() return player.gui.screen.todo_manager_editor.todo_body.todo_editor end
-  local function chooser() return player.gui.screen.todo_manager_production end
   local function select_target(kind, name)
     local original = player.gui.screen.todo_manager_editor
     local button = pane().todo_title_row.todo_choose_target
@@ -89,10 +88,11 @@ return function(player)
   pane().todo_description.text = "Brouillon des ingrédients"
   assert(production_fields.element(pane()).type == "frame")
   assert(production_fields.element(pane()).todo_ingredients.visible)
-  click(production_fields.element(pane()).todo_preview)
+  assert(not production_fields.element(pane()).todo_preview)
   assert(player.opened == original_editor and pane().todo_description.text == "Brouillon des ingrédients")
-  assert(not production_fields.element(pane()).todo_ingredients.visible)
-  click(production_fields.element(pane()).todo_preview)
+  click(production_fields.element(pane()).todo_ingredient_heading.todo_recipe_factopedia)
+  assert(original_editor.valid and pane().todo_description.text == "Brouillon des ingrédients")
+  player.close_factoriopedia_gui()
   assert(production_fields.element(pane()).todo_ingredients.visible and #production_fields.element(pane()).todo_ingredients.children == 2)
   recipe("todo-test-beta")
   click(player.gui.screen.todo_manager_editor.todo_editor_header.todo_filter_recipes)
@@ -100,12 +100,11 @@ return function(player)
   click(player.gui.screen.todo_manager_editor.todo_editor_header.todo_filter_recipes)
   assert(#production_fields.element(pane()).todo_ingredients.children == 1)
   recipe("todo-test-alpha")
-  click(production_fields.element(pane()).todo_preview)
-  assert(not production_fields.element(pane()).todo_ingredients.visible)
+  assert(production_fields.element(pane()).todo_ingredients.visible)
   editor.resize{gui = player.gui, force = player.force, display_resolution = {width = 800, height = 600}, display_scale = 1}
   assert(production_fields.element(pane()).parent == pane())
   assert(pane().todo_description.text == "Brouillon des ingrédients" and pane().tags.production.recipe == "todo-test-alpha")
-  assert(not production_fields.element(pane()).todo_ingredients.visible)
+  assert(production_fields.element(pane()).todo_ingredients.visible)
   editor.resize(player)
   assert(production_fields.element(pane()).parent == pane().parent)
   local same_fields = production_fields.element(pane())
@@ -130,7 +129,7 @@ return function(player)
   local marker = list()["task_" .. id].todo_decompose
   assert(marker.visible and marker.sprite == "item/todo-test-goal" and helpers.is_valid_sprite_path(marker.sprite))
   click(marker)
-  assert(chooser() and not player.gui.screen.todo_manager_window and not chooser().todo_production_add.enabled)
+  assert(pane() and not player.gui.screen.todo_manager_production and not player.gui.screen.todo_manager_window)
   local plan = assert(production.plan(task))
   assert(plan.crafts == 1)
   local part_index, ore_index
@@ -138,18 +137,15 @@ return function(player)
     if ingredient.name == "todo-test-part" then part_index = ingredient.index end
     if ingredient.name == "todo-test-ore" then ore_index = ingredient.index end
   end
-  local selected = chooser().todo_ingredients["ingredient_" .. part_index].todo_select
-  selected.state = true
-  runtime.checked{player_index = player.index, element = selected}
-  assert(chooser().todo_production_add.enabled)
-  click(chooser().todo_production_add)
+  click(production_fields.element(pane()).todo_ingredients["ingredient_" .. part_index].todo_queue_ingredient)
+  click(find(pane(), "todo_save"))
   local children = tasks.children(id)
   assert(#children == 1 and children[1].production.name == "todo-test-part" and children[1].production.quantity == 2)
   assert(not children[1].production.recipe and not tasks.has_children(children[1].id))
   click(list()["task_" .. id].todo_decompose)
-  assert(not chooser().todo_ingredients["ingredient_" .. part_index].todo_select.enabled)
-  assert(chooser().todo_ingredients["ingredient_" .. ore_index].todo_select.enabled)
-  runtime.closed{player_index = player.index, element = chooser()}
+  assert(not production_fields.element(pane()).todo_ingredients["ingredient_" .. part_index].todo_queue_ingredient.enabled)
+  assert(production_fields.element(pane()).todo_ingredients["ingredient_" .. ore_index].todo_queue_ingredient.enabled)
+  runtime.closed{player_index = player.index, element = player.gui.screen.todo_manager_editor}
   local child = children[1]
   click(list()["task_" .. child.id].todo_edit)
   assert(production_fields.element(pane()).todo_recipe_row.visible and not pane().tags.production.recipe)
@@ -158,18 +154,15 @@ return function(player)
   click(list()["task_" .. child.id].todo_decompose)
   local child_plan = assert(production.plan(child))
   assert(child.production.quantity == 2 and #child_plan.ingredients == 1 and child_plan.ingredients[1].amount == 4)
-  selected = chooser().todo_ingredients.ingredient_1.todo_select
-  selected.state = true
-  runtime.checked{player_index = player.index, element = selected}
-  click(chooser().todo_production_add)
+  click(production_fields.element(pane()).todo_ingredients.ingredient_1.todo_queue_ingredient)
+  click(find(pane(), "todo_save"))
   assert(#tasks.children(child.id) == 1 and tasks.children(child.id)[1].production.name == "todo-test-ore")
   assert(tasks.update(child.id, {production = {type = "item", name = "todo-test-ore", quantity = 6}}))
   click(list()["task_" .. id].todo_decompose)
-  selected = chooser().todo_ingredients["ingredient_" .. part_index].todo_select
+  local selected = production_fields.element(pane()).todo_ingredients["ingredient_" .. part_index].todo_queue_ingredient
   assert(selected.enabled)
-  selected.state = true
-  runtime.checked{player_index = player.index, element = selected}
-  click(chooser().todo_production_add)
+  click(selected)
+  click(find(pane(), "todo_save"))
   local replacement
   for _, candidate in ipairs(tasks.children(id)) do
     if candidate.id ~= child.id then replacement = candidate end
@@ -177,11 +170,11 @@ return function(player)
   assert(replacement and replacement.production.name == "todo-test-part")
   assert(tasks.move(child.id, 1))
   click(list()["task_" .. id].todo_decompose)
-  assert(not chooser().todo_ingredients["ingredient_" .. part_index].todo_select.enabled)
+  assert(not production_fields.element(pane()).todo_ingredients["ingredient_" .. part_index].todo_queue_ingredient.enabled)
   local before_repeat = store.get().next_id
   assert(production.expand(id, {part_index}, player, game.tick, task.revision)[1].id == replacement.id)
   assert(store.get().next_id == before_repeat)
-  runtime.closed{player_index = player.index, element = chooser()}
+  runtime.closed{player_index = player.index, element = player.gui.screen.todo_manager_editor}
   assert(tasks.delete(replacement.id))
   assert(tasks.update(child.id, {production = {type = "item", name = "todo-test-part", recipe = "todo-test-part", quantity = 6}}))
   runtime.refresh()
@@ -198,12 +191,10 @@ return function(player)
   assert(child.production.quantity == 6)
   click(list()["task_" .. id].todo_decompose)
   assert(tasks.update(id, {description = "Concurrent plan change"}))
-  selected = chooser().todo_ingredients.ingredient_1.todo_select
-  selected.state = true
-  runtime.checked{player_index = player.index, element = selected}
-  click(chooser().todo_production_add)
-  assert(chooser().todo_production_error.caption[1] == "todo.error-conflict")
-  runtime.closed{player_index = player.index, element = chooser()}
+  click(production_fields.element(pane()).todo_ingredients.ingredient_1.todo_queue_ingredient)
+  click(find(pane(), "todo_save"))
+  assert(pane().todo_error.caption[1] == "todo.error-conflict")
+  runtime.closed{player_index = player.index, element = player.gui.screen.todo_manager_editor}
   click(list()["task_" .. id].todo_edit)
   select_target("fluid", "todo-test-fluid")
   assert(pane().tags.production.type == "fluid")

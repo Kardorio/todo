@@ -83,7 +83,7 @@ function M.render(parent, player, compact)
       common.sprite(row, "show_location", "map", task.id)
       local location_space = row.add{type = "empty-widget", name = "todo_location_space"}
       location_space.style.width = 28
-      common.sprite(row, "decompose", "change_recipe", task.id, {"todo.production-decompose"})
+      common.sprite(row, "decompose", "change_recipe", task.id, {"todo.details"})
       local production_space = row.add{type = "empty-widget", name = "todo_production_space"}
       production_space.style.width = 28
       common.sprite(row, "pin", "track_button", task.id)
@@ -127,7 +127,7 @@ function M.render(parent, player, compact)
     if task.production then
       local target = resolver.prototype(task.production.type, task.production.name)
       row.todo_decompose.sprite = target and task.production.type .. "/" .. task.production.name or "utility/change_recipe"
-      row.todo_decompose.tooltip = {"", target and target.localised_name or task.production.name, "\n", {"todo.production-decompose"}}
+      row.todo_decompose.tooltip = {"", target and target.localised_name or task.production.name, "\n", {"todo.details"}}
     end
     row.todo_pin.tooltip = {prefs.pinned[task.id] and "todo.unpin" or "todo.pin"}
     row.todo_pin.toggled = prefs.pinned[task.id] == true
