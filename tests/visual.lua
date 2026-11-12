@@ -5,6 +5,7 @@ local window = require("gui.main_window")
 local editor = require("gui.task_editor")
 local production_fields = require("gui.production_fields")
 local panel_renderer = require("gui.compact_panel")
+local english = require("visual_language") == "en"
 
 script.on_init(function()
   runtime.initialize()
@@ -26,7 +27,7 @@ local function tick(event)
   if storage.todo_visual_phase == 0 and event.tick >= 60 then
     player.teleport({0, 0}, game.surfaces[1])
     player.zoom = 1
-    local locomotive = assert(tasks.create("Automatiser les locomotives", player, game.tick))
+    local locomotive = assert(tasks.create(english and "Automate locomotives" or "Automatiser les locomotives", player, game.tick))
     storage.todo_visual_task = locomotive.id
     local surface = player.surface
     local tiles = {}
@@ -40,13 +41,13 @@ local function tick(event)
     for x = -3, 6, 3 do surface.create_entity{name = "assembling-machine-2", position = {x, 0}, force = player.force} end
     for x = -5, 8 do surface.create_entity{name = "transport-belt", position = {x, 3}, direction = defines.direction.east, force = player.force} end
     assert(tasks.update(locomotive.id, {production = {type = "item", name = "locomotive", recipe = "locomotive"}}))
-    local engines = assert(tasks.create("Renforcer la production de moteurs", player, game.tick, locomotive.id, false))
+    local engines = assert(tasks.create(english and "Expand engine production" or "Renforcer la production de moteurs", player, game.tick, locomotive.id, false))
     assert(tasks.update(engines.id, {status = "IN_PROGRESS", production = {type = "item", name = "engine-unit"}}))
-    local gears = assert(tasks.create("Assembler les engrenages", player, game.tick, engines.id, false))
-    local steel = assert(tasks.create("Prévoir un stock d'acier", player, game.tick, locomotive.id, false))
+    local gears = assert(tasks.create(english and "Assemble iron gears" or "Assembler les engrenages", player, game.tick, engines.id, false))
+    local steel = assert(tasks.create(english and "Build a steel buffer" or "Prévoir un stock d'acier", player, game.tick, locomotive.id, false))
     assert(tasks.update(steel.id, {status = "DONE"}))
-    local station = assert(tasks.create("Construire la gare de ravitaillement", player, game.tick))
-    local note = assert(tasks.create("Vérifier les priorités des répartiteurs", player, game.tick, nil, false))
+    local station = assert(tasks.create(english and "Build the supply station" or "Construire la gare de ravitaillement", player, game.tick))
+    local note = assert(tasks.create(english and "Check splitter priorities" or "Vérifier les priorités des répartiteurs", player, game.tick, nil, false))
     local prefs = store.player(player.index)
     prefs.pinned = {[locomotive.id] = true, [station.id] = true, [note.id] = true}
     prefs.panel_visible = true

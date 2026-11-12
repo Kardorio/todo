@@ -15,6 +15,9 @@ from build import stage
 
 
 def main():
+    locale = os.environ.get("TODO_VISUAL_LOCALE", "fr")
+    if locale not in ("fr", "en"):
+        raise SystemExit("TODO_VISUAL_LOCALE doit être fr ou en.")
     binary = Path(os.environ.get("FACTORIO_GUI_BIN", ROOT / ".tools/factorio-standalone/bin/x64/factorio")).resolve()
     if any(part.lower() in ("steamapps", ".steam") for part in binary.parts) or (binary.parent / "libsteam_api.so").exists():
         raise SystemExit("Client Steam refusé ; utiliser un client autonome Factorio 2.1.")
@@ -36,6 +39,7 @@ def main():
         target = mods / "todo-manager"
         stage(target)
         shutil.copy2(ROOT / "tests/visual.lua", target / "visual.lua")
+        (target / "visual_language.lua").write_text(f'return "{locale}"\n')
         shutil.copy2(ROOT / "tests/production_data.lua", target / "data-final-fixes.lua")
         with (target / "control.lua").open("a") as control:
             control.write('\nrequire("visual")\n')
@@ -46,7 +50,7 @@ def main():
         ]}))
         config = work / "config.ini"
         config.write_text(f"[path]\nread-data={binary.parents[2] / 'data'}\nwrite-data={write}\n"
-                          "[general]\nlocale=fr\n[other]\ncheck-updates=false\n"
+                          f"[general]\nlocale={locale}\n[other]\ncheck-updates=false\n"
                           "[interface]\nui-scale-mode=manual-pixels\ncustom-ui-scale=1.25\n"
                           "[graphics]\nfull-screen=false\ngraphics-quality=normal\nmax-threads=4\n")
         base = [str(binary), "--config", str(config), "--mod-directory", str(mods), "--disable-audio"]

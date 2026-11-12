@@ -1,52 +1,56 @@
 # Todo Manager
 
-**Vos objectifs industriels, à portée de main.**
+**Keep your factory goals within reach.**
 
-Une gare à construire, une production à débloquer, une chaîne à explorer ?
-Todo Manager garde vos objectifs dans votre partie et vous aide à les décomposer
-progressivement, sans décider de la construction de votre usine.
+A station to build, a bottleneck to fix, a production chain to explore?
+Todo Manager keeps your goals inside your save and helps you break them down
+one step at a time, while you stay in charge of your factory.
 
-## Planifiez pendant que vous jouez
+## Plan while you play
 
-- Créez une tâche rapidement avec `/todo Construire une gare` : la position et la surface sont enregistrées.
-- Organisez vos objectifs en tâches et sous-tâches, avec notes, priorités et statuts.
-- Épinglez vos objectifs dans un rappel compact avec cartes, hiérarchie et progression.
-- Retrouvez une zone grâce à son aperçu et ouvrez sa position sur la carte.
+- Create a task with `/todo Build a new station`. Your current position and surface are saved automatically.
+- Organize goals into tasks and subtasks, with notes, priorities and statuses.
+- Pin the goals you want to follow in a compact reminder with cards, hierarchy and progress.
+- Preview a saved location and jump to it on the map.
 
-## Des recettes aux prochaines étapes
+![Pinned goals with subtasks and progress](images/reminder.png)
 
-Associez un objet, un fluide ou une recette depuis le sélecteur natif de Factorio.
-Consultez les ingrédients et ajoutez uniquement ceux qui vous intéressent en sous-tâches.
-Développez ensuite chaque branche quand vous en avez besoin : aucune chaîne complète
-n'est générée automatiquement.
+## Turn recipes into next steps
 
-Les recettes alternatives restent votre choix. Les recettes non recherchées apparaissent
-en rouge et peuvent être masquées. Un lien ouvre la recette choisie dans la Factopédia.
+Choose an item, fluid or recipe using Factorio's native selector and search.
+Inspect its ingredients and add only the components you need as subtasks.
+Expand each branch when you are ready: no entire production chain is generated automatically.
 
-**Ctrl + Maj + clic gauche** sur une icône de prototype prépare directement une tâche,
-notamment depuis les deux panneaux de la Factopédia ou votre inventaire.
-Le raccourci est modifiable dans les contrôles du jeu.
+Alternative recipes remain your choice. Unresearched recipes appear in red and can
+be hidden. A book button opens the selected recipe in Factoriopedia.
 
-## Votre partie garde votre plan
+![Task editor with location preview and recipe ingredients](images/editor.png)
 
-Les tâches et préférences sont enregistrées dans la sauvegarde et suivent celle-ci
-d'un ordinateur à l'autre. Les tâches sont partagées entre joueurs ; les épingles,
-la largeur et la visibilité du rappel restent personnelles.
+**Ctrl + Shift + left-click** a prototype icon to prepare a task directly from it,
+including from either panel of Factoriopedia or your inventory.
+You can rebind this shortcut in Factorio's controls.
 
-- **Factorio 2.1** requis.
-- Français et anglais.
-- Aucune dépendance obligatoire à un mod de contenu, à Todo List ou à un service externe.
-- Recettes et composants lus depuis les prototypes des mods installés.
-- Licence MIT.
+## Your save keeps your plan
 
-## Pour commencer
+Tasks and preferences are stored inside the save and travel with it between computers.
+Tasks are shared between players; pins, reminder width and visibility are personal.
 
-Après activation, utilisez `/todo` ou l'icône de liste dans la barre des mods.
-Le **+** crée une tâche et l'épingle permet de la suivre dans le rappel.
-La roue crantée règle le rappel. Pour un objectif de production, choisissez son
-composant à côté du titre, sélectionnez sa recette si nécessaire, puis ajoutez ses
-ingrédients avec **+** et enregistrez.
+![Task management with grouped goals and nested subtasks](images/management.png)
 
-Les quantités sont indicatives : Todo Manager organise vos objectifs, sans simuler
-les machines, la productivité ou l'équilibrage d'une usine. Terminer les sous-tâches
-ne valide jamais automatiquement leur parent.
+- Requires **Factorio 2.1**.
+- English and French interfaces.
+- No required content mod, Todo List dependency or external service.
+- Reads recipes and ingredients from the prototypes of installed mods.
+- MIT license.
+
+## Getting started
+
+After enabling the mod, use `/todo` or the list icon in the mod toolbar.
+Use **+** to create a task and the pin button to keep it in your reminder.
+The cog button opens reminder settings. To plan production, choose a component next
+to the task title, select a recipe if alternatives exist, add ingredients with **+**,
+and save.
+
+Quantities are theoretical. Todo Manager organizes goals without simulating machines,
+productivity bonuses or factory balancing. Completing subtasks never automatically
+marks their parent as done.
