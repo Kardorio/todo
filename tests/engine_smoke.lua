@@ -101,6 +101,7 @@ local function run_checks()
   local function tree() return frame().todo_tree end
   local function rows() return tree_renderer.rows(tree()) end
   local function panel() return player.gui.screen.todo_manager_panel end
+  local function reminder_rows() return panel_renderer.rows(panel().todo_panel_tree) end
   assert(not panel())
   local open_button = mod_gui.get_button_flow(player).todo_manager_open
   assert(not player.gui.top.todo_manager_open and not player.gui.top.todo_manager_toggle_panel)
@@ -116,15 +117,16 @@ local function run_checks()
   click(open_button)
   click(find(frame(), "todo_toggle_panel"))
   assert(panel() and prefs.panel_visible)
-  assert(#panel().todo_panel_tree.children == 2, "Reminder must show children even if the management tree is collapsed")
+  local _, reminder_order = panel_renderer.rows(panel().todo_panel_tree)
+  assert(#reminder_order == 2, "Reminder must show children even if the management tree is collapsed")
   local reminder = panel()
   check_header(frame())
   assert(find(frame(), "todo_new").sprite == "utility/add_white")
   assert(find(frame(), "todo_toggle_panel").sprite == "utility/track_button_white")
   check_header(reminder)
   local revision = tasks.get(1).revision
-  assert(reminder.todo_panel_tree.task_1.todo_show_factoriopedia.sprite == "item/todo-test-goal")
-  click(reminder.todo_panel_tree.task_1.todo_show_factoriopedia)
+  assert(panel_renderer.rows(reminder.todo_panel_tree).task_1.todo_show_factoriopedia.sprite == "item/todo-test-goal")
+  click(panel_renderer.rows(reminder.todo_panel_tree).task_1.todo_show_factoriopedia)
   assert(panel() == reminder and tasks.get(1).revision == revision)
   player.close_factoriopedia_gui()
   click(open_button)
@@ -159,18 +161,27 @@ local function run_checks()
   assert(child_columns.todo_edit == root_columns.todo_edit + 24)
   assert(rows().task_1.todo_edit.style.minimal_width == rows().task_2.todo_edit.style.minimal_width + 24)
   assert(rows().task_1.todo_priority_label.caption == "" and rows().task_2.todo_priority_label.caption == "!!!")
-  local compact_root = panel().todo_panel_tree.task_1
-  local compact_child = panel().todo_panel_tree.task_2
+  local compact_root = reminder_rows().task_1
+  local compact_child = reminder_rows().task_2
   assert(compact_root.todo_title.type == "label" and compact_child.todo_title.type == "label")
-  assert(compact_child.todo_indent.style.minimal_width == compact_root.todo_indent.style.minimal_width + 24)
+  assert(compact_child.todo_indent.style.minimal_width == compact_root.todo_indent.style.minimal_width + 36)
+  assert(compact_root.parent == compact_child.parent and compact_root.parent.type == "frame")
+  assert(compact_root.parent.todo_progressbar.value == 1)
+  assert(tasks.update(2, {status = "TODO"}))
+  panel_renderer.render(player)
+  assert(compact_root.parent.todo_progressbar.value == 0 and tasks.get(1).status == "TODO")
+  assert(tasks.update(2, {status = "IGNORED"}))
+  panel_renderer.render(player)
+  assert(not compact_root.parent.todo_progressbar.visible)
+  assert(tasks.update(2, {status = "DONE"}))
+  panel_renderer.render(player)
   assert(#compact_root.todo_indent.children == 0)
   assert(compact_child.todo_indent.level_1.caption == "└")
   local reminder_root_columns = column_offsets(compact_root)
   local reminder_child_columns = column_offsets(compact_child)
-  assert(reminder_root_columns.todo_show_location == reminder_child_columns.todo_location_space)
-  assert(reminder_root_columns.todo_show_factoriopedia == reminder_child_columns.todo_show_factoriopedia)
-  assert(reminder_child_columns.todo_title == reminder_root_columns.todo_title + 24)
-  for _, row in ipairs(panel().todo_panel_tree.children) do
+  assert(reminder_child_columns.todo_show_factoriopedia > reminder_root_columns.todo_show_factoriopedia)
+  assert(reminder_child_columns.todo_title == reminder_root_columns.todo_title + 30)
+  for _, row in pairs(reminder_rows()) do
     for _, element in ipairs(row.children) do
       assert(element.type ~= "checkbox")
       if element.type == "sprite-button" then
@@ -178,8 +189,8 @@ local function run_checks()
       else assert(not element.tags.todo_action) end
     end
   end
-  assert(#panel().todo_panel_tree.children == 2)
-  local original_width = panel().todo_panel_tree.task_1.todo_title.style.minimal_width
+  assert(reminder_rows().task_2)
+  local original_width = reminder_rows().task_1.todo_title.style.minimal_width
   click(find(frame(), "todo_open_settings"))
   local settings = player.gui.screen.todo_manager_settings
   assert(settings and not frame())
@@ -196,8 +207,8 @@ local function run_checks()
   slider.slider_value = 444
   runtime.setting_changed{player_index = player.index, element = slider}
   assert(prefs.panel_width == 444 and panel().todo_panel_tree.style.minimal_width == 444)
-  assert(panel().todo_panel_tree.task_1.todo_title.style.minimal_width == original_width + 64)
-  assert(panel().todo_panel_tree.task_2.todo_indent.style.minimal_width == 24)
+  assert(reminder_rows().task_1.todo_title.style.minimal_width == original_width + 64)
+  assert(reminder_rows().task_2.todo_indent.style.minimal_width == 36)
   click(find(panel(), "todo_toggle_panel"))
   panel_renderer.toggle(player)
   assert(panel().todo_panel_tree.style.minimal_width == 444)
@@ -231,8 +242,8 @@ local function run_checks()
   assert(rows()["task_" .. root.id].parent ~= rows().task_1.parent)
   assert(root.title == "Augmenter les fondeurs" and root.created_by == player.index)
   assert(root.position.x == player.position.x and root.surface_index == player.surface.index)
-  assert(prefs.pinned[root.id] and panel().todo_panel_tree["task_" .. root.id])
-  local plain_columns = column_offsets(panel().todo_panel_tree["task_" .. root.id])
+  assert(prefs.pinned[root.id] and reminder_rows()["task_" .. root.id])
+  local plain_columns = column_offsets(reminder_rows()["task_" .. root.id])
   assert(plain_columns.todo_title == reminder_root_columns.todo_title)
   assert(plain_columns.todo_target_space == reminder_root_columns.todo_show_factoriopedia)
   runtime.command{player_index = player.index, parameter = " "}
@@ -409,7 +420,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 27)
+    assert(store.get().gui_revision == 28)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)

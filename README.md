@@ -44,10 +44,13 @@ un raccourci de création depuis les prototypes survolés dans la Factoriopedia.
 - La corbeille de tâche demande confirmation. Les enfants sont conservés et
   remontent au parent de la tâche supprimée, à sa place dans l'ordre des tâches.
 
-Le panneau compact sert uniquement de rappel : titres en texte, sous-tâches
-indentées et liens vers la carte ou la Factoriopedia lorsqu'une cible est associée.
-Les icônes occupent deux colonnes fixes ; seuls les titres des sous-tâches sont décalés.
-Les repères `├`, `└` et `│` matérialisent les branches de la hiérarchie.
+Le panneau compact sert uniquement de rappel : chaque objectif possède sa carte,
+avec une icône plus grande, un titre marqué et un compteur s'il possède des enfants.
+Une barre de progression apparaît lorsqu'au moins un enfant n'est pas ignoré.
+Celle-ci compte les enfants directs hors ignorés et
+ne modifie jamais le statut de l'objectif. Les sous-tâches et leurs icônes sont
+indentées ; les repères `├`, `└` et `│` matérialisent les branches de la hiérarchie.
+Les seules actions sont les liens vers la carte ou la Factoriopedia.
 La couleur rappelle le statut ; le survol affiche le texte complet et les notes.
 La roue crantée de la fenêtre de gestion ouvre une fenêtre dédiée aux paramètres :
 visibilité du rappel et curseur de largeur, appliqués immédiatement. Ce choix

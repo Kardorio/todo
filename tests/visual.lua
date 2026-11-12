@@ -4,6 +4,7 @@ local store = require("scripts.storage")
 local window = require("gui.main_window")
 local editor = require("gui.task_editor")
 local production_fields = require("gui.production_fields")
+local panel_renderer = require("gui.compact_panel")
 
 script.on_init(function()
   runtime.initialize()
@@ -52,7 +53,7 @@ local function tick(event)
     prefs.panel_width = 508
     prefs.panel_location = {x = 36, y = 110}
     runtime.refresh()
-    local rows = player.gui.screen.todo_manager_panel.todo_panel_tree
+    local rows = panel_renderer.rows(player.gui.screen.todo_manager_panel.todo_panel_tree)
     assert(rows["task_" .. engines.id].todo_indent.level_1.caption == "├")
     assert(rows["task_" .. gears.id].todo_indent.level_1.caption == "│")
     assert(rows["task_" .. gears.id].todo_indent.level_2.caption == "└")
