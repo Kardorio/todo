@@ -171,7 +171,6 @@ return function(player)
     if candidate.id ~= child.id then replacement = candidate end
   end
   assert(replacement and replacement.production.name == "todo-test-part")
-  assert(tasks.move(child.id, 1))
   click(list()["task_" .. id].todo_decompose)
   assert(not production_fields.element(pane()).todo_ingredients["ingredient_" .. part_index].todo_queue_ingredient.enabled)
   local before_repeat = store.get().next_id

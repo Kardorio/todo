@@ -133,11 +133,8 @@ local function run_checks()
   assert(tree().task_2)
   assert(tree().task_1.todo_collapse.visible and not tree().task_1.todo_branch_space.visible)
   assert(not tree().task_2.todo_collapse.visible and tree().task_2.todo_branch_space.visible)
-  assert(tree().task_1.todo_up.type == "sprite-button")
-  assert(tree().task_1.todo_up.sprite == "virtual-signal/up-arrow")
-  assert(tree().task_1.todo_down.sprite == "virtual-signal/down-arrow")
-  assert(helpers.is_valid_sprite_path(tree().task_1.todo_up.sprite))
-  assert(helpers.is_valid_sprite_path(tree().task_1.todo_down.sprite))
+  assert(not tree().task_1.todo_up and not tree().task_1.todo_down)
+  assert(not tree().task_2.todo_up and not tree().task_2.todo_down)
   local function column_offsets(row)
     local offsets, cursor = {}, 0
     for _, element in ipairs(row.children) do
@@ -150,7 +147,7 @@ local function run_checks()
   end
   local root_columns = column_offsets(tree().task_1)
   local child_columns = column_offsets(tree().task_2)
-  for _, name in ipairs({"todo_priority_label", "todo_progress", "todo_pin", "todo_new_child", "todo_up", "todo_down"}) do
+  for _, name in ipairs({"todo_priority_label", "todo_progress", "todo_pin", "todo_new_child"}) do
     assert(root_columns[name] == child_columns[name], "Misaligned task column: " .. name)
   end
   assert(root_columns.todo_show_location == child_columns.todo_location_space)
@@ -273,9 +270,6 @@ local function run_checks()
   assert(child.parent_id == ui_task.id)
   assert(tasks.update(child.id, {parent_id = false}))
   runtime.refresh()
-  local order = child.order
-  click(tree()["task_" .. child.id].todo_up)
-  assert(child.order ~= order)
 
   -- V1-AC4: location removal preserves the task; position changes require saving.
   window.resize{index = player.index, gui = player.gui, display_resolution = {width = 900, height = 600}, display_scale = 1}
@@ -411,7 +405,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 25)
+    assert(store.get().gui_revision == 26)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)

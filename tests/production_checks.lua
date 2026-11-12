@@ -111,7 +111,6 @@ return function(player)
   assert(tasks.update(first.id, {production = target("item", "ore")}))
   local replacement = assert(production.expand(task.id, {1}, player, game.tick, task.revision))[1]
   assert(replacement.id ~= first.id)
-  assert(tasks.move(first.id, 1))
   local before_repeat = store.get().next_id
   assert(production.expand(task.id, {1}, player, game.tick, task.revision)[1].id == replacement.id)
   assert(store.get().next_id == before_repeat)

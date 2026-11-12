@@ -22,7 +22,7 @@ function M.render(parent, player, compact)
   end
   local entries = tasks.tree(prefs.collapsed, roots)
   local children = parent.children
-  local rebuild = parent.tags.todo_tree_layout ~= 6 or #children ~= #entries
+  local rebuild = parent.tags.todo_tree_layout ~= 7 or #children ~= #entries
   if not rebuild then
     for index, entry in ipairs(entries) do
       local row = children[index]
@@ -34,7 +34,7 @@ function M.render(parent, player, compact)
   end
   if rebuild then
     parent.clear()
-    parent.tags = {todo_tree_layout = 6}
+    parent.tags = {todo_tree_layout = 7}
   end
   local counts = {}
   for _, task in ipairs(tasks.list()) do
@@ -60,7 +60,7 @@ function M.render(parent, player, compact)
       progress_width = math.max(progress_width, #(count.done .. "/" .. count.total) * 8)
     end
   end
-  local fixed_width = (compact and 186 or 282) + progress_width
+  local fixed_width = (compact and 186 or 218) + progress_width
   local title_width = math.max(64, parent.style.minimal_width - fixed_width - 16)
   for _, entry in ipairs(entries) do
     local task = entry.task
@@ -89,8 +89,6 @@ function M.render(parent, player, compact)
       common.sprite(row, "pin", "track_button", task.id)
       if not compact then
         common.sprite(row, "new_child", "add", task.id, {"todo.new-child"})
-        common.sprite(row, "up", "virtual-signal/up-arrow", task.id, {"todo.up"})
-        common.sprite(row, "down", "virtual-signal/down-arrow", task.id, {"todo.down"})
       end
     end
     local count = counts[task.id]

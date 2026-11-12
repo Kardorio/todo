@@ -20,8 +20,9 @@ un raccourci de création depuis les prototypes survolés dans la Factoriopedia.
   modifications puis revient au listing ; **Recharger** les abandonne.
   Fermer l'éditeur revient également au listing sans enregistrer.
   La création et l'édition sont accessibles à tous les joueurs.
-- Les flèches **↑ / ↓** réordonnent une tâche parmi ses sœurs. Le parent est
-  déterminé à la création depuis la liste et conservé lors de l'édition.
+- L'ordre des tâches est stable, sans tri manuel. Les nouvelles tâches sont
+  ajoutées à la fin de leur branche ; l'ordre déjà enregistré est conservé.
+  Le parent est déterminé à la création depuis la liste et conservé lors de l'édition.
   Aucune profondeur maximale n'est imposée au modèle.
 - La case d'une ligne marque la tâche comme terminée ; la décocher la remet à
   faire. Le formulaire donne accès aux quatre statuts : à faire, en cours,

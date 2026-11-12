@@ -181,24 +181,6 @@ function M.delete(id)
   return true
 end
 
-function M.move(id, direction)
-  local task = M.get(id)
-  if not task then return nil, "missing" end
-  if direction ~= -1 and direction ~= 1 then return nil, "invalid_direction" end
-  local siblings = M.children(task.parent_id)
-  for index, sibling in ipairs(siblings) do
-    if sibling.id == id then
-      local target = siblings[index + direction]
-      if target then
-        task.order, target.order = target.order, task.order
-        task.revision, target.revision = task.revision + 1, target.revision + 1
-      end
-      return task
-    end
-  end
-  return task
-end
-
 function M.tree(collapsed, root_ids)
   collapsed = collapsed or {}
   local index = child_index()

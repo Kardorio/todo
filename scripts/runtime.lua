@@ -9,7 +9,7 @@ local factopedia = require("integrations.factopedia")
 local titles = require("scripts.task_titles")
 local settings = require("gui.settings_window")
 local M = {}
-local gui_revision = 25
+local gui_revision = 26
 
 local function open_list(player)
   settings.close(player)
@@ -170,10 +170,6 @@ function M.clicked(event)
       prefs.pinned[id] = not prefs.pinned[id] or nil
       render(player)
     end
-  elseif action == "up" or action == "down" then
-    local _, err = tasks.move(id, action == "up" and -1 or 1)
-    if err then editor.error(player, err) end
-    M.refresh()
   elseif action == "save" then
     if editor.save(player) then open_list(player) M.refresh() end
   elseif action == "reload_editor" then editor.reload(player)
