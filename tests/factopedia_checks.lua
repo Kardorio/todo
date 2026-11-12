@@ -3,6 +3,7 @@ local tasks = require("scripts.task_manager")
 local store = require("scripts.storage")
 local factopedia = require("integrations.factopedia")
 local mod_gui = require("mod-gui")
+local tree_renderer = require("gui.task_tree")
 
 local function find(root, name)
   if root.name == name then return root end
@@ -81,7 +82,7 @@ return function(player)
   assert(created.title == "Recette choisie" and created.created_by == player.index)
   assert(created.production.type == "recipe" and created.production.recipe == "todo-test-alpha")
   assert(not created.position and not created.surface_index and store.player(player.index).pinned[created.id])
-  local row = player.gui.screen.todo_manager_window.todo_tree["task_" .. created.id]
+  local row = tree_renderer.rows(player.gui.screen.todo_manager_window.todo_tree)["task_" .. created.id]
   runtime.clicked{player_index = player.index, element = row.todo_decompose}
   local selection = frame()
   pane().todo_description.text = "Brouillon conservé"

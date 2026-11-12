@@ -20,6 +20,9 @@ un raccourci de création depuis les prototypes survolés dans la Factoriopedia.
   modifications puis revient au listing ; **Recharger** les abandonne.
   Fermer l'éditeur revient également au listing sans enregistrer.
   La création et l'édition sont accessibles à tous les joueurs.
+- Chaque tâche principale et ses descendants sont regroupés dans un cadre.
+  Les compteurs restent compacts et les colonnes entièrement vides de priorité
+  ou de position sont masquées pour laisser davantage de place aux titres.
 - L'ordre des tâches est stable, sans tri manuel. Les nouvelles tâches sont
   ajoutées à la fin de leur branche ; l'ordre déjà enregistré est conservé.
   Le parent est déterminé à la création depuis la liste et conservé lors de l'édition.

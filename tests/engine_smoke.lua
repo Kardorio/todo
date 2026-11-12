@@ -99,6 +99,7 @@ local function run_checks()
   local function edit_frame() return player.gui.screen.todo_manager_editor end
   local function pane() return edit_frame().todo_body.todo_editor end
   local function tree() return frame().todo_tree end
+  local function rows() return tree_renderer.rows(tree()) end
   local function panel() return player.gui.screen.todo_manager_panel end
   assert(not panel())
   local open_button = mod_gui.get_button_flow(player).todo_manager_open
@@ -128,13 +129,15 @@ local function run_checks()
   player.close_factoriopedia_gui()
   click(open_button)
   assert(frame() and not edit_frame() and not frame().todo_content)
-  assert(tree().task_1 and not tree().task_2)
-  click(tree().task_1.todo_collapse)
-  assert(tree().task_2)
-  assert(tree().task_1.todo_collapse.visible and not tree().task_1.todo_branch_space.visible)
-  assert(not tree().task_2.todo_collapse.visible and tree().task_2.todo_branch_space.visible)
-  assert(not tree().task_1.todo_up and not tree().task_1.todo_down)
-  assert(not tree().task_2.todo_up and not tree().task_2.todo_down)
+  assert(rows().task_1 and not rows().task_2)
+  click(rows().task_1.todo_collapse)
+  assert(rows().task_2)
+  assert(rows().task_1.parent == rows().task_2.parent)
+  assert(rows().task_1.parent.name == "branch_1" and rows().task_1.parent.type == "frame")
+  assert(rows().task_1.todo_collapse.visible and not rows().task_1.todo_branch_space.visible)
+  assert(not rows().task_2.todo_collapse.visible and rows().task_2.todo_branch_space.visible)
+  assert(not rows().task_1.todo_up and not rows().task_1.todo_down)
+  assert(not rows().task_2.todo_up and not rows().task_2.todo_down)
   local function column_offsets(row)
     local offsets, cursor = {}, 0
     for _, element in ipairs(row.children) do
@@ -145,8 +148,8 @@ local function run_checks()
     end
     return offsets
   end
-  local root_columns = column_offsets(tree().task_1)
-  local child_columns = column_offsets(tree().task_2)
+  local root_columns = column_offsets(rows().task_1)
+  local child_columns = column_offsets(rows().task_2)
   for _, name in ipairs({"todo_priority_label", "todo_progress", "todo_pin", "todo_new_child"}) do
     assert(root_columns[name] == child_columns[name], "Misaligned task column: " .. name)
   end
@@ -154,8 +157,8 @@ local function run_checks()
   assert(child_columns.todo_done == root_columns.todo_done + 24)
   assert(child_columns.todo_branch_space == root_columns.todo_collapse + 24)
   assert(child_columns.todo_edit == root_columns.todo_edit + 24)
-  assert(tree().task_1.todo_edit.style.minimal_width == tree().task_2.todo_edit.style.minimal_width + 24)
-  assert(tree().task_1.todo_priority_label.caption == "" and tree().task_2.todo_priority_label.caption == "!!!")
+  assert(rows().task_1.todo_edit.style.minimal_width == rows().task_2.todo_edit.style.minimal_width + 24)
+  assert(rows().task_1.todo_priority_label.caption == "" and rows().task_2.todo_priority_label.caption == "!!!")
   local compact_root = panel().todo_panel_tree.task_1
   local compact_child = panel().todo_panel_tree.task_2
   assert(compact_root.todo_title.type == "label" and compact_child.todo_title.type == "label")
@@ -225,6 +228,7 @@ local function run_checks()
   local before = store.get().next_id
   runtime.command{player_index = player.index, parameter = "  Augmenter les fondeurs  "}
   local root = assert(tasks.get(before))
+  assert(rows()["task_" .. root.id].parent ~= rows().task_1.parent)
   assert(root.title == "Augmenter les fondeurs" and root.created_by == player.index)
   assert(root.position.x == player.position.x and root.surface_index == player.surface.index)
   assert(prefs.pinned[root.id] and panel().todo_panel_tree["task_" .. root.id])
@@ -249,18 +253,18 @@ local function run_checks()
   local ui_task = assert(tasks.get(before + 1))
   assert(ui_task.description == "Prévoir une gare" and ui_task.status == "IN_PROGRESS")
   assert(ui_task.priority == 3 and not ui_task.position)
-  click(tree()["task_" .. ui_task.id].todo_new_child)
+  click(rows()["task_" .. ui_task.id].todo_new_child)
   pane().todo_title_row.todo_title.text = "Enfant"
   click(find(pane(), "todo_save"))
   local child = assert(tasks.get(before + 2))
   assert(child.parent_id == ui_task.id)
-  local row = tree()["task_" .. child.id]
+  local row = rows()["task_" .. child.id]
   row.todo_done.state = true
   runtime.checked{player_index = player.index, element = row.todo_done}
   assert(child.status == "DONE" and ui_task.status == "IN_PROGRESS")
   local done, total = tasks.progress(ui_task.id)
   assert(done == 1 and total == 1)
-  click(tree()["task_" .. child.id].todo_edit)
+  click(rows()["task_" .. child.id].todo_edit)
   assert(tasks.update(child.id, {description = "Concurrent change"}))
   assert(not editor.save(player))
   assert(pane().todo_error.caption[1] == "todo.error-conflict")
@@ -277,10 +281,10 @@ local function run_checks()
   window.resize{index = player.index, gui = player.gui, display_resolution = {width = 900, height = 600}, display_scale = 1.5}
   assert(tree().style.minimal_width == 536)
   window.resize(player)
-  assert(tree()["task_" .. root.id].todo_show_location.visible)
-  assert(tree()["task_" .. root.id].todo_show_location.tooltip[2] == player.surface.name)
+  assert(rows()["task_" .. root.id].todo_show_location.visible)
+  assert(rows()["task_" .. root.id].todo_show_location.tooltip[2] == player.surface.name)
   local original_window = frame()
-  click(tree()["task_" .. root.id].todo_show_location)
+  click(rows()["task_" .. root.id].todo_show_location)
   assert(player.controller_type == defines.controllers.remote)
   assert(original_window.valid and frame() == original_window and player.opened == original_window)
   assert(player.position.x == root.position.x and player.position.y == root.position.y)
@@ -288,7 +292,7 @@ local function run_checks()
     common.preserve_window(player, function() error("Navigation fixture failure") end)
   end)
   assert(not action_ok and not common.is_preserving(player.index))
-  click(tree()["task_" .. root.id].todo_edit)
+  click(rows()["task_" .. root.id].todo_edit)
   pane().todo_description.text = "Draft kept while another task changes"
   editor.resize{gui = player.gui, force = player.force, display_resolution = {width = 900, height = 600}, display_scale = 1}
   assert(pane().style.maximal_height == 450)
@@ -327,17 +331,17 @@ local function run_checks()
   assert(root.position)
   click(find(pane(), "todo_save"))
   assert(tasks.get(root.id) and not root.position and not root.surface_index)
-  assert(not tree()["task_" .. root.id].todo_show_location.visible)
-  click(tree()["task_" .. root.id].todo_edit)
+  assert(not rows()["task_" .. root.id].todo_show_location.visible)
+  click(rows()["task_" .. root.id].todo_edit)
   assert(not location_panel().todo_location_go.enabled and not common.is_preserving(player.index))
   click(find(location_panel(), "todo_location_current"))
   assert(location_panel().todo_view.todo_camera.surface_index == player.surface.index)
   click(find(pane(), "todo_save"))
   assert(root.position.x == player.position.x)
-  assert(tree()["task_" .. root.id].todo_show_location.visible)
+  assert(rows()["task_" .. root.id].todo_show_location.visible)
   local physical = player.physical_position
   local physical_surface = player.physical_surface.index
-  click(tree()["task_" .. root.id].todo_show_location)
+  click(rows()["task_" .. root.id].todo_show_location)
   assert(player.controller_type == defines.controllers.remote)
   assert(player.physical_position.x == physical.x and player.physical_surface.index == physical_surface)
 
@@ -356,7 +360,7 @@ local function run_checks()
   assert(game.delete_surface(surface))
 
   runtime.command{player_index = player.index}
-  click(tree()["task_" .. ui_task.id].todo_edit)
+  click(rows()["task_" .. ui_task.id].todo_edit)
   click(find(pane(), "todo_delete"))
   assert(tasks.get(ui_task.id) and pane().todo_delete_confirm.visible)
   click(find(pane(), "todo_cancel_delete"))
@@ -384,7 +388,7 @@ local function run_checks()
   runtime.command{}
   runtime.command{player_index = player.index}
   assert(frame())
-  click(tree()["task_" .. root.id].todo_edit)
+  click(rows()["task_" .. root.id].todo_edit)
   runtime.closed{player_index = player.index, element = edit_frame()}
   assert(frame() and not edit_frame())
   local pinned = prefs.pinned
@@ -397,7 +401,7 @@ local function run_checks()
   runtime.refresh()
   assert(panel())
   original_window = frame()
-  click(tree()["task_" .. root.id].todo_show_location)
+  click(rows()["task_" .. root.id].todo_show_location)
   storage.todo_smoke_navigation_window = original_window
   storage.todo_smoke_started = true
 end
@@ -405,7 +409,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 26)
+    assert(store.get().gui_revision == 27)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)
@@ -425,7 +429,7 @@ script.on_nth_tick(1, function()
   local task = assert(tasks.get(storage.todo_smoke_task))
   assert(locations.describe(task)[2][1] == "todo.missing-surface")
   local player = game.get_player(1)
-  local marker = player.gui.screen.todo_manager_window.todo_tree["task_" .. task.id].todo_show_location
+  local marker = tree_renderer.rows(player.gui.screen.todo_manager_window.todo_tree)["task_" .. task.id].todo_show_location
   assert(marker.visible and not marker.enabled and marker.tooltip[2][1] == "todo.missing-surface")
   local ok, err = locations.navigate(game.get_player(1), task)
   assert(not ok and err == "missing_surface")

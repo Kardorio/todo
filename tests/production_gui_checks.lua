@@ -4,6 +4,7 @@ local store = require("scripts.storage")
 local production = require("scripts.production_manager")
 local editor = require("gui.task_editor")
 local production_fields = require("gui.production_fields")
+local tree_renderer = require("gui.task_tree")
 
 local function find(root, name)
   local stack = {root}
@@ -22,7 +23,7 @@ return function(player)
   local function changed(element)
     runtime.production_changed{player_index = player.index, element = element}
   end
-  local function list() return player.gui.screen.todo_manager_window.todo_tree end
+  local function list() return tree_renderer.rows(player.gui.screen.todo_manager_window.todo_tree) end
   local function pane() return player.gui.screen.todo_manager_editor.todo_body.todo_editor end
   local function select_target(kind, name)
     local original = player.gui.screen.todo_manager_editor
