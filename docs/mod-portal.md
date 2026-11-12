@@ -1,9 +1,22 @@
 # Todo Manager
 
-**Keep your factory goals within reach.**
+## Why another todo list?
 
-A station to build, a bottleneck to fix, a production chain to explore?
-Todo Manager keeps your goals inside your save and helps you break them down
+Because planning your factory should be quick, even when you are browsing hundreds
+of unfamiliar items and fluids.
+
+**See a component you need? Turn its icon into a task.** Hover an item, fluid or
+recipe icon and press **Ctrl + Shift + left-click**. It works wherever Factorio
+exposes a hovered prototype, including either panel of Factoriopedia, your inventory
+and mod interfaces. The task opens with the component already selected and its
+localized name filled in. Add a note if needed, then save — no need to type the
+component's name by hand. The shortcut is configurable in Factorio's controls.
+
+**Need to remember something right here? Type `/todo Build a new station`.**
+The task is created immediately with your current position and surface, and pinned
+to your reminder. Keep building and come back to that exact spot later.
+
+From there, organize your goals into subtasks and explore their recipe ingredients
 one step at a time, while you stay in charge of your factory.
 
 ## Plan while you play
@@ -24,11 +37,10 @@ Expand each branch when you are ready: no entire production chain is generated a
 Alternative recipes remain your choice. Unresearched recipes appear in red and can
 be hidden. A book button opens the selected recipe in Factoriopedia.
 
-![Task editor with location preview and recipe ingredients](https://raw.githubusercontent.com/Kardorio/todo/master/docs/images/editor.png)
+Quantities are theoretical; machines, productivity bonuses and factory balancing
+are not simulated. Completing subtasks never automatically marks their parent as done.
 
-**Ctrl + Shift + left-click** a prototype icon to prepare a task directly from it,
-including from either panel of Factoriopedia or your inventory.
-You can rebind this shortcut in Factorio's controls.
+![Task editor with location preview and recipe ingredients](https://raw.githubusercontent.com/Kardorio/todo/master/docs/images/editor.png)
 
 ## Your save keeps your plan
 
@@ -42,15 +54,3 @@ Tasks are shared between players; pins, reminder width and visibility are person
 - No required content mod, Todo List dependency or external service.
 - Reads recipes and ingredients from the prototypes of installed mods.
 - MIT license.
-
-## Getting started
-
-After enabling the mod, use `/todo` or the list icon in the mod toolbar.
-Use **+** to create a task and the pin button to keep it in your reminder.
-The cog button opens reminder settings. To plan production, choose a component next
-to the task title, select a recipe if alternatives exist, add ingredients with **+**,
-and save.
-
-Quantities are theoretical. Todo Manager organizes goals without simulating machines,
-productivity bonuses or factory balancing. Completing subtasks never automatically
-marks their parent as done.
