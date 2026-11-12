@@ -52,6 +52,10 @@ function M.open(player, id, parent_id)
     local header = common.header(frame, {id and "todo.details" or "todo.new"})
     header.name = "todo_editor_header"
     header.children[1].name = "todo_editor_heading"
+    local filter = common.sprite(header, "filter_recipes", "side_menu_tutorials_icon", nil, {"factoriopedia.show-unresearched"})
+    filter.style = "frame_action_button"
+    filter.style.size = {28, 28}
+    filter.style.padding = 0
     common.sprite(header, "close_editor", "close", nil, {"todo.cancel"})
     local body = frame.add{type = "flow", name = "todo_body", direction = "horizontal"}
     body.style.horizontal_spacing = 12

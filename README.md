@@ -147,7 +147,7 @@ Le choix de recette apparaît directement sous le titre et le composant. Lorsqu'
 seule recette existe, elle est sélectionnée automatiquement et le menu est masqué.
 Lorsqu'il existe plusieurs recettes, choisir explicitement une alternative.
 Les recettes verrouillées sont affichées en rouge. Le bouton à toque de la
-Factoriopedia, à côté du composant, reprend son infobulle « Afficher les non-recherchées »
+Factoriopedia, dans la barre de titre de l'éditeur juste avant la croix, reprend son infobulle « Afficher les non-recherchées »
 et son fonctionnement : activé en jaune, il affiche les recettes verrouillées ;
 désactivé, il les masque. Ce filtre est mémorisé
 par joueur. Filtrer ne change jamais la recette sélectionnée et ne choisit pas
