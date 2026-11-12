@@ -1,0 +1,14 @@
+---------------------------------------------------------------------------------------------------
+Version: 1.0.0
+Date: 2026-11-12
+  Features:
+    - Première version stable de Todo Manager pour Factorio 2.1.
+    - Tâches partagées, sous-tâches, statuts, priorités et notes enregistrés dans la sauvegarde.
+    - Rappel compact avec épingles et préférences propres à chaque joueur.
+    - Positions avec aperçu de zone et navigation sur la carte.
+    - Objectifs de production et ajout sélectif des ingrédients en sous-tâches.
+    - Choix des recettes alternatives et filtre des recettes non recherchées.
+    - Ajout depuis un prototype survolé avec Ctrl + Maj + clic gauche, configurable.
+    - Interfaces et traductions françaises et anglaises.
+  Changes:
+    - Conservation des tâches et préférences des versions de développement.

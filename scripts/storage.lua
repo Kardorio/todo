@@ -11,10 +11,10 @@ end
 function M.initialize()
   local state = storage.todo_manager
   if not state then
-    state = {schema_version = 2, next_id = 1, tasks = {}, players = {}}
+    state = {schema_version = 3, next_id = 1, tasks = {}, players = {}}
     storage.todo_manager = state
   end
-  assert(state.schema_version == 1 or state.schema_version == 2, "Unsupported Todo Manager schema")
+  assert(state.schema_version == 1 or state.schema_version == 2 or state.schema_version == 3, "Unsupported Todo Manager schema")
   local highest_id = 0
   for id, task in pairs(state.tasks) do
     task.order = task.order or id
@@ -24,7 +24,7 @@ function M.initialize()
   end
   state.next_id = math.max(state.next_id, highest_id + 1)
   for index, value in pairs(state.players) do state.players[index] = preferences(value) end
-  state.schema_version = 2
+  state.schema_version = 3
   return state
 end
 

@@ -2,6 +2,7 @@ local tasks = require("scripts.task_manager")
 local store = require("scripts.storage")
 local common = require("gui.common")
 local locations = require("scripts.location_manager")
+local resolver = require("scripts.recipe_resolver")
 local M = {}
 local colors = {
   TODO = {r = 0.95, g = 0.95, b = 0.95},
@@ -9,6 +10,16 @@ local colors = {
   DONE = {r = 0.4, g = 0.85, b = 0.4},
   IGNORED = {r = 0.55, g = 0.55, b = 0.55}
 }
+
+function M.rows(parent)
+  local result = {}
+  for _, block in ipairs(parent.children) do
+    if block.type == "frame" then
+      for _, row in ipairs(block.children) do result[row.name] = row end
+    end
+  end
+  return result
+end
 
 function M.render(parent, player, compact)
   local prefs = store.player(player.index)
@@ -20,20 +31,45 @@ function M.render(parent, player, compact)
     end
   end
   local entries = tasks.tree(prefs.collapsed, roots)
+  local groups, group = {}, nil
+  for _, entry in ipairs(entries) do
+    if entry.depth == 0 then
+      group = {id = entry.task.id, entries = {}}
+      groups[#groups + 1] = group
+    end
+    group.entries[#group.entries + 1] = entry
+    entry.group = group
+  end
   local children = parent.children
-  local rebuild = parent.tags.todo_tree_layout ~= 5 or #children ~= #entries
+  local rows = {}
+  local rebuild = parent.tags.todo_tree_layout ~= 8
+    or (#groups > 0 and #children ~= #groups)
+    or (#groups == 0 and (#children ~= 1 or children[1].name ~= "todo_empty"))
   if not rebuild then
-    for index, entry in ipairs(entries) do
-      local row = children[index]
-      if row.name ~= "task_" .. entry.task.id or row.tags.depth ~= entry.depth then
-        rebuild = true
-        break
+    for index, current in ipairs(groups) do
+      local block = children[index]
+      local block_rows = block.children
+      if block.name ~= "branch_" .. current.id or #block_rows ~= #current.entries then rebuild = true break end
+      current.frame = block
+      for row_index, entry in ipairs(current.entries) do
+        local row = block_rows[row_index]
+        if row.name ~= "task_" .. entry.task.id or row.tags.depth ~= entry.depth then rebuild = true break end
+        rows[row.name] = row
       end
+      if rebuild then break end
     end
   end
   if rebuild then
     parent.clear()
-    parent.tags = {todo_tree_layout = 5}
+    parent.tags = {todo_tree_layout = 8}
+    rows = {}
+    for _, current in ipairs(groups) do
+      local block = parent.add{type = "frame", name = "branch_" .. current.id,
+        direction = "vertical", style = "inside_shallow_frame"}
+      block.style.padding = 6
+      block.style.bottom_margin = 6
+      current.frame = block
+    end
   end
   local counts = {}
   for _, task in ipairs(tasks.list()) do
@@ -52,20 +88,27 @@ function M.render(parent, player, compact)
       label.style.maximal_width = compact and 330 or 580
     end
   end
-  local progress_width = 48
+  local progress_width, priority_width, locations_visible, production_visible = 0, 0, false, false
   for _, entry in ipairs(entries) do
     local count = counts[entry.task.id]
     if count then
       progress_width = math.max(progress_width, #(count.done .. "/" .. count.total) * 8)
     end
+    priority_width = math.max(priority_width, (entry.task.priority or 0) * 7)
+    locations_visible = locations_visible or (entry.task.position ~= nil and entry.task.surface_index ~= nil)
+    production_visible = production_visible or entry.task.production ~= nil
   end
-  local fixed_width = (compact and 154 or 250) + progress_width
-  local title_width = math.max(64, parent.style.minimal_width - fixed_width - 16)
+  local fixed_width = (compact and 90 or 122)
+    + (progress_width > 0 and progress_width + 4 or 0)
+    + (priority_width > 0 and priority_width + 4 or 0)
+    + (locations_visible and 32 or 0) + (production_visible and 32 or 0)
+  local title_width = math.max(64, parent.style.minimal_width - fixed_width - 24)
+  for _, current in ipairs(groups) do current.frame.style.width = parent.style.minimal_width - 12 end
   for _, entry in ipairs(entries) do
     local task = entry.task
-    local row = parent["task_" .. task.id]
+    local row = rows["task_" .. task.id]
     if not row then
-      row = parent.add{type = "flow", direction = "horizontal", name = "task_" .. task.id,
+      row = entry.group.frame.add{type = "flow", direction = "horizontal", name = "task_" .. task.id,
         tags = {depth = entry.depth}}
       row.style.vertical_align = "center"
       row.add{type = "empty-widget", name = "todo_indent"}
@@ -82,12 +125,14 @@ function M.render(parent, player, compact)
       common.sprite(row, "show_location", "map", task.id)
       local location_space = row.add{type = "empty-widget", name = "todo_location_space"}
       location_space.style.width = 28
+      common.sprite(row, "decompose", "change_recipe", task.id, {"todo.details"})
+      local production_space = row.add{type = "empty-widget", name = "todo_production_space"}
+      production_space.style.width = 28
       common.sprite(row, "pin", "track_button", task.id)
       if not compact then
         common.sprite(row, "new_child", "add", task.id, {"todo.new-child"})
-        common.sprite(row, "up", "virtual-signal/up-arrow", task.id, {"todo.up"})
-        common.sprite(row, "down", "virtual-signal/down-arrow", task.id, {"todo.down"})
       end
+      rows[row.name] = row
     end
     local count = counts[task.id]
     local has_children = count ~= nil
@@ -95,7 +140,7 @@ function M.render(parent, player, compact)
     local indent_width = math.min(entry.depth * 24, compact and 60 or 156, title_width - 64)
     row.todo_indent.style.width = indent_width
     row.todo_edit.style.width = title_width - indent_width
-    row.todo_priority_label.style.width = 24
+    row.todo_priority_label.style.width = priority_width
     row.todo_progress.style.width = progress_width
     row.todo_progress.style.horizontal_align = "right"
     row.todo_collapse.sprite = "utility/" .. (prefs.collapsed[task.id] and "expand" or "collapse")
@@ -109,19 +154,26 @@ function M.render(parent, player, compact)
     row.todo_edit.style.font_color = colors[task.status]
     row.todo_priority_label.caption = string.rep("!", task.priority or 0)
     row.todo_priority_label.tooltip = {"todo.priority-" .. (task.priority or 0)}
-    row.todo_priority_label.visible = true
+    row.todo_priority_label.visible = priority_width > 0
     row.todo_progress.caption = count and count.done .. "/" .. count.total or ""
-    row.todo_progress.visible = true
+    row.todo_progress.visible = progress_width > 0
     row.todo_progress.tooltip = count and {"", count.done .. "/" .. count.total, "\n", {"todo.progress-help"}}
       or {"todo.progress-help"}
     row.todo_show_location.visible = task.position ~= nil and task.surface_index ~= nil
-    row.todo_location_space.visible = not row.todo_show_location.visible
+    row.todo_location_space.visible = locations_visible and not row.todo_show_location.visible
     row.todo_show_location.tooltip = locations.describe(task)
     row.todo_show_location.enabled = task.surface_index ~= nil and game.surfaces[task.surface_index] ~= nil
+    row.todo_decompose.visible = task.production ~= nil
+    row.todo_production_space.visible = production_visible and task.production == nil
+    if task.production then
+      local target = resolver.prototype(task.production.type, task.production.name)
+      row.todo_decompose.sprite = target and task.production.type .. "/" .. task.production.name or "utility/change_recipe"
+      row.todo_decompose.tooltip = {"", target and target.localised_name or task.production.name, "\n", {"todo.details"}}
+    end
     row.todo_pin.tooltip = {prefs.pinned[task.id] and "todo.unpin" or "todo.pin"}
     row.todo_pin.toggled = prefs.pinned[task.id] == true
   end
-  local selected = prefs.selected_id and parent["task_" .. prefs.selected_id]
+  local selected = prefs.selected_id and rows["task_" .. prefs.selected_id]
   if rebuild and selected then parent.scroll_to_element(selected) end
 end
 

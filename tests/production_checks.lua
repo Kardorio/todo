@@ -1,0 +1,151 @@
+local store = require("scripts.storage")
+local tasks = require("scripts.task_manager")
+local resolver = require("scripts.recipe_resolver")
+local production = require("scripts.production_manager")
+local titles = require("scripts.task_titles")
+
+local function target(kind, name, recipe, quantity)
+  return {type = kind, name = "todo-test-" .. name, recipe = recipe and "todo-test-" .. recipe, quantity = quantity}
+end
+
+return function(player)
+  local original = storage.todo_manager
+  storage.todo_manager = {schema_version = 2, next_id = 2,
+    tasks = {[1] = {id = 1, title = "Preserved V1", description = "Notes", status = "TODO",
+      order = 1, priority = 2, revision = 9, created_by = player.index, creator_name = player.name, created_at = 4}},
+    players = {[player.index] = {pinned = {[1] = true}, collapsed = {[1] = true}, panel_visible = false}}}
+  local migrated = store.initialize()
+  assert(migrated.schema_version == 3 and migrated.tasks[1].revision == 9)
+  assert(migrated.tasks[1].title == "Preserved V1" and not migrated.tasks[1].production)
+  assert(migrated.players[player.index].pinned[1] and not migrated.players[player.index].panel_visible)
+  assert(store.initialize() == migrated and migrated.next_id == 2)
+  local task = assert(tasks.create("Goal", player, game.tick, nil, false))
+  local choices = resolver.recipes("item", "todo-test-goal")
+  assert(#choices == 4)
+  for index = 2, #choices do assert(choices[index - 1].name < choices[index].name) end
+  assert(not prototypes.recipe["todo-test-beta"].enabled)
+  for _, choice in ipairs(choices) do assert(choice.name ~= "todo-test-hidden") end
+  assert(resolver.prototype("item", "todo-test-goal") and resolver.prototype("fluid", "todo-test-fluid"))
+  assert(not resolver.prototype("unknown", "todo-test-goal"))
+  assert(#resolver.recipes("item", "missing-prototype") == 0)
+  assert(#resolver.recipes("recipe", "todo-test-alpha") == 1)
+  assert(production.validate(target("item", "goal")))
+  local value, err = production.plan({production = target("item", "goal")})
+  assert(not value and err == "recipe_required")
+  assert(not production.validate({type = "unknown", name = "x"}))
+  value, err = production.validate({type = "item", name = "missing-prototype"})
+  assert(not value and err == "missing_prototype")
+  for _, quantity in ipairs({0, -1, 0.5, math.huge}) do
+    value, err = production.validate(target("item", "goal", "alpha", quantity))
+    assert(not value and err == "invalid_quantity")
+  end
+  value, err = production.validate(target("item", "goal", "missing", 1))
+  assert(not value and err == "invalid_recipe")
+  value, err = production.validate(target("item", "empty", "alpha", 1))
+  assert(not value and err == "zero_yield")
+  local revision = task.revision
+  value, err = tasks.update(task.id, {title = "Invalid mutation", production = target("item", "goal", "alpha", -1)})
+  assert(not value and err == "invalid_quantity" and task.title == "Goal" and task.revision == revision)
+  local requested = target("item", "goal", "alpha", 5)
+  assert(tasks.update(task.id, {production = requested}, revision))
+  requested.quantity = 100
+  assert(task.production.quantity == 5)
+  local plan = assert(production.plan(task))
+  assert(plan.crafts == 3 and plan.expected_output == 6 and #plan.ingredients == 2)
+  assert(plan.ingredients[1].name == "todo-test-part" and plan.ingredients[1].amount == 6)
+  assert(plan.ingredients[2].name == "todo-test-ore" and plan.ingredients[2].amount == 9)
+  assert(production.plan({production = target("item", "goal", "alpha")}).crafts == 1)
+  local recipe_only = assert(production.validate(target("recipe", "alpha", nil, 4)))
+  assert(recipe_only.recipe == "todo-test-alpha")
+  assert(production.plan({production = recipe_only}).crafts == 4)
+  local probability = assert(production.plan({production = target("item", "probability", "probability", 2)}))
+  assert(math.abs(resolver.yield(prototypes.recipe["todo-test-probability"], "item", "todo-test-probability") - 0.5) < 0.000001)
+  assert(probability.crafts == 4 and probability.ingredients[1].amount == 8)
+  local repeated = assert(production.plan({production = target("item", "goal", "repeated", 6)}))
+  assert(repeated.crafts == 2 and repeated.expected_output == 6)
+  local fluid = assert(production.plan({production = target("fluid", "fluid", "fluid", 4.5)}))
+  assert(fluid.crafts == 2 and fluid.expected_output == 8)
+  assert(fluid.ingredients[1].amount == 4 and fluid.ingredients[1].minimum_temperature == 100)
+  assert(fluid.ingredients[1].maximum_temperature == 200)
+  local decimal = assert(production.plan({production = target("fluid", "fluid", "decimal-fluid", 0.07)}))
+  local native_yield = resolver.yield(prototypes.recipe["todo-test-decimal-fluid"], "fluid", "todo-test-fluid")
+  assert(decimal.crafts == math.ceil(0.07 / native_yield))
+  assert(production.craft_count(0.07, 0.01) == 7)
+  assert(production.craft_count(0.07000001, 0.01) == 8)
+  assert(production.craft_count(5e-324, 1e10) == 1)
+  assert(production.plan({production = target("fluid", "fluid", "decimal-fluid", 0.07000001)}).crafts == 8)
+  assert(production.plan({production = target("fluid", "fluid", "decimal-fluid", 1e-300)}).crafts == 1)
+  local overflow = target("recipe", "alpha", nil, 1e308)
+  value, err = production.plan({production = overflow})
+  assert(not value and err == "overflow")
+  local next_id = store.get().next_id
+  for _, selection in ipairs({{}, {1, 1}, {1.5}, {3}, {1, 3}, {[2] = 1}, {1, unexpected = 2}}) do
+    value, err = production.expand(task.id, selection, player, game.tick, task.revision)
+    assert(not value and err == "invalid_selection" and store.get().next_id == next_id)
+  end
+  value, err = production.expand(task.id, {1}, player, game.tick, task.revision - 1)
+  assert(not value and err == "conflict" and store.get().next_id == next_id)
+  local children = assert(production.expand(task.id, {1}, player, game.tick, task.revision))
+  local title_request
+  for id, pending in pairs(store.player(player.index).task_titles) do
+    if pending.task_id == children[1].id then title_request = id end
+  end
+  assert(title_request)
+  assert(titles.translated{player_index = player.index, id = title_request, translated = true, result = "Composant traduit"})
+  assert(children[1].title == "Composant traduit")
+  titles.request(player, children[1])
+  for id, pending in pairs(store.player(player.index).task_titles) do
+    if pending.task_id == children[1].id then title_request = id end
+  end
+  assert(tasks.update(children[1].id, {title = "Titre personnalisé"}))
+  titles.translated{player_index = player.index, id = title_request, translated = true, result = "Réponse tardive"}
+  assert(children[1].title == "Titre personnalisé")
+  assert(#children == 1 and #tasks.children(task.id) == 1)
+  local first = children[1]
+  assert(first.parent_id == task.id and first.production.type == "item" and first.production.quantity == 6)
+  assert(not first.production.recipe and not first.position)
+  assert(first.source_recipe == "todo-test-alpha" and first.source_ingredient == 1)
+  assert(tasks.update(first.id, {title = "Manual title", status = "DONE"}))
+  assert(production.expand(task.id, {1}, player, game.tick, task.revision)[1].id == first.id)
+  assert(first.title == "Manual title" and first.status == "DONE" and #tasks.children(task.id) == 1)
+  assert(tasks.update(first.id, {production = target("item", "ore")}))
+  local replacement = assert(production.expand(task.id, {1}, player, game.tick, task.revision))[1]
+  assert(replacement.id ~= first.id)
+  local before_repeat = store.get().next_id
+  assert(production.expand(task.id, {1}, player, game.tick, task.revision)[1].id == replacement.id)
+  assert(store.get().next_id == before_repeat)
+  assert(production.match_child(production.existing_children(task.id, "todo-test-alpha"), plan.ingredients[1]).id == replacement.id)
+  assert(tasks.delete(replacement.id))
+  assert(tasks.update(first.id, {production = target("item", "part")}))
+  assert(tasks.update(first.id, {production = target("item", "part", "part", 6)}))
+  local grandchildren = assert(production.expand(first.id, {1}, player, game.tick, first.revision))
+  assert(#grandchildren == 1 and grandchildren[1].production.name == "todo-test-ore")
+  assert(grandchildren[1].production.quantity == 12 and #tasks.children(grandchildren[1].id) == 0)
+  assert(production.expand(task.id, {2}, player, game.tick, task.revision))
+  assert(#tasks.children(task.id) == 2)
+  assert(tasks.update(task.id, {production = target("item", "goal", "beta", 2)}))
+  local alternative = assert(production.expand(task.id, {1}, player, game.tick, task.revision))
+  assert(#tasks.children(task.id) == 3 and alternative[1].source_recipe == "todo-test-beta")
+  assert(first.title == "Manual title" and first.production.quantity == 6)
+  local cycle = assert(tasks.create("Cycle", player, game.tick, nil, false))
+  assert(tasks.update(cycle.id, {production = target("item", "part", "cycle", 2)}))
+  local cycle_child = assert(production.expand(cycle.id, {1}, player, game.tick, cycle.revision))[1]
+  assert(cycle_child.production.name == "todo-test-part" and not cycle_child.production.recipe)
+  assert(#tasks.children(cycle_child.id) == 0)
+  local catalyst = assert(production.plan({production = target("item", "goal", "catalyst", 2)}))
+  assert(catalyst.ingredients[1].name == "todo-test-catalyst" and catalyst.ingredients[1].amount == 2)
+  local no_input = assert(production.plan({production = target("recipe", "no-input")}))
+  assert(#no_input.ingredients == 0)
+  value, err = production.expand(-1, {1}, player, game.tick, 1)
+  assert(not value and err == "missing")
+  local old_missing = {type = "item", name = "removed-mod-item", recipe = "removed-mod-recipe", quantity = 2}
+  task.production = old_missing
+  assert(tasks.update(task.id, {title = "Still editable", production = old_missing}, task.revision))
+  assert(task.production.name == "removed-mod-item")
+  value, err = production.plan(task)
+  assert(not value and err == "missing_prototype")
+  assert(tasks.update(task.id, {production = false}))
+  assert(not task.production and #tasks.children(task.id) == 3)
+  storage.todo_manager = original
+  log("TODO_PRODUCTION_OK")
+end

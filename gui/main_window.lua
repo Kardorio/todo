@@ -1,5 +1,6 @@
 local common = require("gui.common")
 local tree = require("gui.task_tree")
+local mod_gui = require("mod-gui")
 local M = {}
 local window_name = "todo_manager_window"
 
@@ -16,16 +17,15 @@ function M.resize(player)
 end
 
 function M.ensure_button(player)
-  if not player.gui.top.todo_manager_open then
-    player.gui.top.add{type = "button", name = "todo_manager_open", caption = {"todo.title"},
-      tooltip = {"todo.open"}, tags = common.tags("open")}
+  for _, name in ipairs({"todo_manager_open", "todo_manager_toggle_panel"}) do
+    local old = player.gui.top[name]
+    if old then old.destroy() end
   end
-  if not player.gui.top.todo_manager_toggle_panel then
-    player.gui.top.add{type = "sprite-button", name = "todo_manager_toggle_panel",
-      sprite = "utility/track_button", tooltip = {"todo.toggle-panel"}, tags = common.tags("toggle_panel")}
+  local buttons = mod_gui.get_button_flow(player)
+  if not buttons.todo_manager_open then
+    buttons.add{type = "sprite-button", name = "todo_manager_open", style = mod_gui.button_style,
+      sprite = "utility/list_view", tooltip = {"todo.open"}, tags = common.tags("open")}
   end
-  player.gui.top.todo_manager_open.tags = common.tags("open")
-  player.gui.top.todo_manager_toggle_panel.tags = common.tags("toggle_panel")
 end
 
 function M.close(player)
@@ -51,8 +51,9 @@ function M.open(player)
   if not frame then
     frame = player.gui.screen.add{type = "frame", name = window_name, direction = "vertical"}
     local header = common.header(frame, {"todo.title"})
-    common.sprite(header, "new", "add", nil, {"todo.new"})
+    common.sprite(header, "new", "add", nil, {"todo.new-help"})
     common.sprite(header, "toggle_panel", "track_button", nil, {"todo.toggle-panel"})
+    common.sprite(header, "open_settings", "side_menu_menu_icon", nil, {"todo.settings"})
     common.sprite(header, "close", "close", nil, {"todo.close"})
     frame.add{type = "scroll-pane", name = "todo_tree", direction = "vertical"}
     frame.auto_center = true

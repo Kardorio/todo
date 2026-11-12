@@ -13,7 +13,7 @@ def validate():
     lua.lua_tolstring.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
     lua.lua_tolstring.restype = ctypes.c_char_p
     lua.lua_close.argtypes = [ctypes.c_void_p]
-    files = sorted(path for path in ROOT.rglob("*.lua") if "dist" not in path.parts)
+    files = sorted(path for path in ROOT.rglob("*.lua") if not {"dist", ".tools"}.intersection(path.parts))
     references = set()
     for path in files:
         state = lua.luaL_newstate()

@@ -5,15 +5,20 @@ local panel = require("gui.compact_panel")
 local editor = require("gui.task_editor")
 local common = require("gui.common")
 local locations = require("scripts.location_manager")
+local factopedia = require("integrations.factopedia")
+local titles = require("scripts.task_titles")
+local settings = require("gui.settings_window")
 local M = {}
-local gui_revision = 5
+local gui_revision = 28
 
 local function open_list(player)
+  settings.close(player)
   editor.close(player)
   window.open(player)
 end
 
 local function open_editor(player, id, parent_id)
+  settings.close(player)
   window.close(player)
   editor.open(player, id, parent_id)
 end
@@ -32,7 +37,8 @@ end
 function M.initialize()
   store.initialize().gui_revision = gui_revision
   for _, player in pairs(game.players) do
-    store.player(player.index)
+    local prefs = store.player(player.index)
+    prefs.pending_hover, prefs.native_crafts = nil, nil
     window.ensure_button(player)
     local old = player.gui.screen.todo_manager_window
     if old then
@@ -40,6 +46,12 @@ function M.initialize()
       window.open(player)
     end
     editor.close(player)
+    settings.close(player)
+    local old_production = player.gui.screen.todo_manager_production
+    if old_production then old_production.destroy() end
+    local old_picker = player.gui.screen.todo_manager_target_picker
+    if old_picker then old_picker.destroy() end
+    store.player(player.index).target_picker = nil
     local old_panel = player.gui.screen.todo_manager_panel
     if old_panel then old_panel.destroy() end
     panel.render(player)
@@ -48,7 +60,7 @@ end
 
 function M.ensure_ready()
   local state = store.get()
-  if not state or state.schema_version ~= 2 or state.gui_revision ~= gui_revision then M.initialize() end
+  if not state or state.schema_version ~= 3 or state.gui_revision ~= gui_revision then M.initialize() end
 end
 
 function M.first_tick()
@@ -58,7 +70,7 @@ end
 
 function M.loaded()
   local state = store.get()
-  local needs_migration = not state or state.schema_version ~= 2 or state.gui_revision ~= gui_revision
+  local needs_migration = not state or state.schema_version ~= 3 or state.gui_revision ~= gui_revision
   script.on_event(defines.events.on_tick, needs_migration and M.first_tick or nil)
 end
 
@@ -66,7 +78,8 @@ function M.player_created(event)
   M.ensure_ready()
   local player = game.get_player(event.player_index)
   if not player then return end
-  store.player(player.index)
+  local prefs = store.player(player.index)
+  prefs.pending_hover, prefs.native_crafts = nil, nil
   window.ensure_button(player)
   render(player)
 end
@@ -90,6 +103,37 @@ function M.command(command)
   M.refresh()
 end
 
+local function open_hover_target(player, kind, name)
+  if player.gui.screen.todo_manager_editor then
+    editor.error(player, "draft_open")
+    player.print({"todo.error-draft_open"})
+    return
+  end
+  player.close_factoriopedia_gui()
+  open_editor(player)
+  if kind then editor.set_target(player, kind, name) end
+end
+
+function M.from_hover(event)
+  M.ensure_ready()
+  local player = game.get_player(event.player_index)
+  if not player then return end
+  if not event.selected_prototype then return end
+  local kind, name, err = factopedia.target(event.selected_prototype)
+  if not kind then
+    if err ~= "unsupported_hovered_target" then player.print({"todo.error-" .. err}) end
+    return
+  end
+  open_hover_target(player, kind, name)
+end
+
+function M.shortcut(event)
+  if event.prototype_name ~= "todo-manager-new-task" then return end
+  M.ensure_ready()
+  local player = game.get_player(event.player_index)
+  if player then open_hover_target(player) end
+end
+
 local function event_context(event)
   M.ensure_ready()
   local element = event.element
@@ -104,7 +148,13 @@ function M.clicked(event)
   if action == "open" then open_list(player)
   elseif action == "close" then window.close(player)
   elseif action == "close_editor" then open_list(player)
+  elseif action == "recipe_factopedia" or action == "filter_recipes" or action == "queue_ingredient" then
+    editor.production_changed(player, element)
   elseif action == "toggle_panel" then panel.toggle(player)
+  elseif action == "open_settings" then window.close(player) settings.open(player)
+  elseif action == "close_settings" then open_list(player)
+  elseif action == "narrow_panel" then panel.change_width(player, -64)
+  elseif action == "widen_panel" then panel.change_width(player, 64)
   elseif action == "new" then open_editor(player)
   elseif action == "edit" then
     if tasks.get(id) then open_editor(player, id) end
@@ -120,10 +170,6 @@ function M.clicked(event)
       prefs.pinned[id] = not prefs.pinned[id] or nil
       render(player)
     end
-  elseif action == "up" or action == "down" then
-    local _, err = tasks.move(id, action == "up" and -1 or 1)
-    if err then editor.error(player, err) end
-    M.refresh()
   elseif action == "save" then
     if editor.save(player) then open_list(player) M.refresh() end
   elseif action == "reload_editor" then editor.reload(player)
@@ -134,6 +180,9 @@ function M.clicked(event)
   elseif action == "location_current" then editor.location(player, false)
   elseif action == "location_clear" then editor.location(player, true)
   elseif action == "location_go" then editor.navigate(player)
+  elseif action == "decompose" then
+    if tasks.get(id) then open_editor(player, id) end
+  elseif action == "show_factoriopedia" then factopedia.open(player, tasks.get(id))
   elseif action == "show_location" then
     local task = tasks.get(id)
     if task then
@@ -147,7 +196,9 @@ end
 
 function M.checked(event)
   local player, element, tags = event_context(event)
-  if not player or tags.todo_action ~= "done" then return end
+  if not player then return end
+  if tags.todo_action == "settings_panel_visible" then settings.changed(player, element) return end
+  if tags.todo_action ~= "done" then return end
   local task = tasks.get(tags.task_id)
   if not task then M.refresh() return end
   local _, err = tasks.update(task.id, {status = element.state and "DONE" or "TODO"}, task.revision)
@@ -164,6 +215,33 @@ function M.closed(event)
   elseif editor.is_window(event.element) then
     local player = game.get_player(event.player_index)
     if player then open_list(player) end
+  elseif event.element and event.element.valid and event.element.name == "todo_manager_settings" then
+    local player = game.get_player(event.player_index)
+    if player then open_list(player) end
+  end
+end
+
+function M.production_changed(event)
+  local player, element = event_context(event)
+  if player then editor.production_changed(player, element) end
+end
+
+function M.setting_changed(event)
+  local player, element = event_context(event)
+  if player then settings.changed(player, element) end
+end
+
+function M.translated(event)
+  M.ensure_ready()
+  editor.translated(event)
+  if titles.translated(event) then M.refresh() end
+end
+
+function M.translation_tick()
+  M.ensure_ready()
+  for _, player in pairs(game.connected_players) do
+    editor.retry_translation(player)
+    titles.retry(player)
   end
 end
 
@@ -178,6 +256,7 @@ function M.resized(event)
   if player then
     window.resize(player)
     editor.resize(player)
+    if player.gui.screen.todo_manager_settings then settings.open(player) end
     panel.resized(player)
   end
 end

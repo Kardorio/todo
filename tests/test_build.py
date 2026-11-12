@@ -23,8 +23,8 @@ class BuildTests(unittest.TestCase):
         command("package")
         name = f"{INFO['name']}_{INFO['version']}"
         with zipfile.ZipFile(ROOT / "dist" / f"{name}.zip") as archive:
-            expected = {"info.json", "control.lua"}
-            for folder in ("scripts", "gui", "locale"):
+            expected = {"info.json", "data.lua", "control.lua", "README.md", "LICENSE", "changelog.txt"}
+            for folder in ("scripts", "gui", "integrations", "locale", "docs"):
                 expected.update(str(path.relative_to(ROOT)) for path in (ROOT / folder).rglob("*") if path.is_file())
             self.assertEqual(set(archive.namelist()), {f"{name}/{path}" for path in expected})
             for path in expected:
