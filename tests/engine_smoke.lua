@@ -24,6 +24,14 @@ local function find(root, name)
   error("Missing GUI element " .. name)
 end
 
+local function check_header(frame)
+  local header = frame.children[1]
+  assert(header.tags.todo_header)
+  for _, element in ipairs(header.children) do
+    if element.type == "sprite-button" then assert(element.style.name == "frame_action_button") end
+  end
+end
+
 script.on_init(function()
   runtime.initialize()
   local player = {index = 1, name = "Fixture", position = {x = 12, y = 34}, surface = game.surfaces[1]}
@@ -109,6 +117,10 @@ local function run_checks()
   assert(panel() and prefs.panel_visible)
   assert(#panel().todo_panel_tree.children == 2, "Reminder must show children even if the management tree is collapsed")
   local reminder = panel()
+  check_header(frame())
+  assert(find(frame(), "todo_new").sprite == "utility/add_white")
+  assert(find(frame(), "todo_toggle_panel").sprite == "utility/track_button_white")
+  check_header(reminder)
   local revision = tasks.get(1).revision
   assert(reminder.todo_panel_tree.task_1.todo_show_factoriopedia.sprite == "item/todo-test-goal")
   click(reminder.todo_panel_tree.task_1.todo_show_factoriopedia)
@@ -171,6 +183,7 @@ local function run_checks()
   click(find(frame(), "todo_open_settings"))
   local settings = player.gui.screen.todo_manager_settings
   assert(settings and not frame())
+  check_header(settings)
   local slider = settings.todo_settings_body.todo_panel_width
   local visible = settings.todo_settings_body.todo_panel_visible
   visible.state = false
@@ -225,6 +238,7 @@ local function run_checks()
   assert(store.get().next_id == before + 1)
   click(find(frame(), "todo_new"))
   assert(not frame() and edit_frame() and pane().todo_title_row.todo_title)
+  check_header(edit_frame())
   click(find(pane(), "todo_save"))
   assert(not frame() and edit_frame())
   assert(store.get().next_id == before + 1)
@@ -397,7 +411,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 24)
+    assert(store.get().gui_revision == 25)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)

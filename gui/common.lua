@@ -34,15 +34,20 @@ function M.button(parent, action, caption, id, tooltip)
 end
 
 function M.sprite(parent, action, sprite, id, tooltip)
+  if parent.tags.todo_header then
+    local light = {add = "add_white", track_button = "track_button_white"}
+    sprite = light[sprite] or sprite
+  end
   local button = parent.add{type = "sprite-button", name = "todo_" .. action,
-    sprite = sprite:find("/") and sprite or "utility/" .. sprite, style = "tool_button", tooltip = tooltip,
+    sprite = sprite:find("/") and sprite or "utility/" .. sprite,
+    style = parent.tags.todo_header and "frame_action_button" or "tool_button", tooltip = tooltip,
     tags = M.tags(action, id)}
   button.style.size = {28, 28}
   return button
 end
 
 function M.header(frame, caption)
-  local header = frame.add{type = "flow", direction = "horizontal"}
+  local header = frame.add{type = "flow", direction = "horizontal", tags = {todo_header = true}}
   header.add{type = "label", caption = caption, style = "frame_title"}
   local dragger = header.add{type = "empty-widget", style = "draggable_space_header"}
   dragger.style.horizontally_stretchable = true
