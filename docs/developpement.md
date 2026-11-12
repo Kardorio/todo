@@ -75,7 +75,7 @@ La recette n'est directement connue que si le prototype survolé est une recette
 1. Mettre à jour `info.json` et `changelog.txt`.
 2. Exécuter les vérifications et relire les captures.
 3. Construire l'archive avec `./build.sh package` et vérifier son contenu.
-4. Utiliser `docs/mod-portal.md` comme description anglaise du portail ; téléverser les captures de `docs/images/` séparément et remplacer leurs liens relatifs par les URL publiques fournies par le portail.
+4. Utiliser `docs/mod-portal.md` comme description anglaise du portail. Les captures utilisent des URL GitHub directes sur `master` : vérifier leur accès sans authentification avant publication. Si le dépôt reste privé, téléverser les captures sur le portail et adapter les URL.
 
 `thumbnail.png` est la vignette 144 × 144 incluse dans le mod. Son original se trouve
 dans `docs/images/portal-icon.png`. Il a été généré avec l'outil intégré imagegen,

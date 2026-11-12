@@ -13,7 +13,7 @@ one step at a time, while you stay in charge of your factory.
 - Pin the goals you want to follow in a compact reminder with cards, hierarchy and progress.
 - Preview a saved location and jump to it on the map.
 
-![Pinned goals with subtasks and progress](images/reminder.png)
+![Pinned goals with subtasks and progress](https://raw.githubusercontent.com/Kardorio/todo/master/docs/images/reminder.png)
 
 ## Turn recipes into next steps
 
@@ -24,7 +24,7 @@ Expand each branch when you are ready: no entire production chain is generated a
 Alternative recipes remain your choice. Unresearched recipes appear in red and can
 be hidden. A book button opens the selected recipe in Factoriopedia.
 
-![Task editor with location preview and recipe ingredients](images/editor.png)
+![Task editor with location preview and recipe ingredients](https://raw.githubusercontent.com/Kardorio/todo/master/docs/images/editor.png)
 
 **Ctrl + Shift + left-click** a prototype icon to prepare a task directly from it,
 including from either panel of Factoriopedia or your inventory.
@@ -35,7 +35,7 @@ You can rebind this shortcut in Factorio's controls.
 Tasks and preferences are stored inside the save and travel with it between computers.
 Tasks are shared between players; pins, reminder width and visibility are personal.
 
-![Task management with grouped goals and nested subtasks](images/management.png)
+![Task management with grouped goals and nested subtasks](https://raw.githubusercontent.com/Kardorio/todo/master/docs/images/management.png)
 
 - Requires **Factorio 2.1**.
 - English and French interfaces.
