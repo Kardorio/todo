@@ -60,7 +60,7 @@ Il n'ajoute jamais automatiquement toute une chaîne de production.
 
 ## Installation depuis les sources
 
-Exécutez `./build.sh package`, puis placez `dist/todo-manager_1.0.0.zip` dans votre
+Exécutez `./build.sh package`, puis placez `dist/todo-manager_1.0.1.zip` dans votre
 dossier de mods et activez **Todo Manager**. Redémarrez Factorio après installation
 pour charger les prototypes de raccourci.
 

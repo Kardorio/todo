@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.1
+Date: 2026-11-13
+  Bugfixes:
+    - Fixed ingredient selection losing queued components or crashing when deselecting an ingredient.
+    - Fixed adding multiple selected ingredients as subtasks when saving a production goal.
+---------------------------------------------------------------------------------------------------
 Version: 1.0.0
 Date: 2026-11-12
   Features:

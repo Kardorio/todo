@@ -87,7 +87,8 @@ function M.refresh(pane, player)
   fields.todo_target_header.todo_target_name.style.width = recipe_row.visible and 270 or 234
   fields.todo_plan_error.caption = err and {"todo.error-" .. err} or ""
   local list = fields.todo_ingredients
-  local queued = pane.tags.queued_ingredients or {}
+  local queued = {}
+  for _, index in ipairs(pane.tags.queued_ingredients or {}) do queued[index] = true end
   local existing = plan and production.existing_children(pane.tags.task_id, plan.recipe) or {}
   list.clear()
   list.visible = plan ~= nil
@@ -260,8 +261,14 @@ function M.queue_ingredient(pane, player, index)
   local plan = production.plan{production = M.read(pane)}
   if not plan or not plan.ingredients[index] then return end
   local tags = pane.tags
-  tags.queued_ingredients = tags.queued_ingredients or {}
-  tags.queued_ingredients[index] = not tags.queued_ingredients[index] or nil
+  local queued = tags.queued_ingredients or {}
+  local selected
+  for position, ingredient_index in ipairs(queued) do
+    if ingredient_index == index then selected = position break end
+  end
+  if selected then table.remove(queued, selected)
+  else queued[#queued + 1] = index end
+  tags.queued_ingredients = queued
   pane.tags = tags
   M.refresh(pane, player)
 end
