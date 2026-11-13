@@ -189,10 +189,7 @@ function M.save(player)
   local target, target_error = production_fields.read(pane)
   if target == nil then M.error(player, target_error) return end
   local parent_id = tags.parent_id
-  local selected = {}
-  for index, queued in pairs(tags.queued_ingredients or {}) do
-    if queued then selected[#selected + 1] = index end
-  end
+  local selected = tags.queued_ingredients or {}
   table.sort(selected)
   if #selected > 0 then
     local plan, plan_error = production.plan{production = target}
