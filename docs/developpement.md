@@ -51,7 +51,8 @@ Les tests moteur couvrent sauvegarde/rechargement, migrations des schémas 1 et 
 arbres profonds, statuts, épingles par joueur, conflits d'édition, surfaces supprimées,
 recettes alternatives et prototypes de test. Le scénario natif exerce le survol et
 Ctrl + Maj + clic dans l'inventaire et les deux panneaux de la Factopédia, ainsi que
-le geste natif Maj seul. Aucun pré-commit ni mesure de couverture n'est configuré.
+le geste natif Maj seul et un clic sur le titre d'une note dans le rappel.
+Aucun pré-commit ni mesure de couverture n'est configuré.
 Le multijoueur avec plusieurs clients simultanés n'est pas couvert par ces scénarios.
 
 ## Architecture et persistance

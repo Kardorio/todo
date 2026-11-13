@@ -31,10 +31,24 @@ function M.rows(parent)
   return rows, order, cards
 end
 
-local function render_list(parent, roots, width)
-  local entries = tasks.tree({}, roots)
+local function pinned_entries(roots, pinned)
+  local entries, ancestors = {}, {}
+  for _, entry in ipairs(tasks.tree({}, roots)) do
+    local ancestor = ancestors[entry.depth - 1]
+    if pinned[entry.task.id] then
+      local visible = {task = entry.task, depth = ancestor and ancestor.depth + 1 or 0,
+        parent_id = ancestor and ancestor.task.id or nil}
+      entries[#entries + 1] = visible
+      ancestors[entry.depth] = visible
+    else ancestors[entry.depth] = ancestor end
+  end
+  return entries
+end
+
+local function render_list(parent, roots, width, pinned)
+  local entries = pinned_entries(roots, pinned)
   local rows, order, cards = M.rows(parent)
-  local rebuild = parent.tags.reminder_layout ~= 4 or #order ~= #entries
+  local rebuild = parent.tags.reminder_layout ~= 5 or #order ~= #entries
   local groups, group, last_children, continuation, counts = {}, nil, {}, {}, {}
   for _, task in pairs(store.get().tasks) do
     if task.parent_id then
@@ -50,12 +64,12 @@ local function render_list(parent, roots, width)
     local row = order[index]
     if not row or row.name ~= "task_" .. entry.task.id or row.tags.depth ~= entry.depth
       or row.parent.name ~= "goal_" .. group then rebuild = true end
-    if entry.depth > 0 then last_children[entry.task.parent_id] = entry.task.id end
+    if entry.depth > 0 then last_children[entry.parent_id] = entry.task.id end
   end
   if #cards ~= #groups then rebuild = true end
   if rebuild then
     parent.clear()
-    parent.tags = {reminder_layout = 4}
+    parent.tags = {reminder_layout = 5}
     rows = {}
     for _, id in ipairs(groups) do
       local card = parent.add{type = "frame", name = "goal_" .. id, direction = "vertical", style = "inside_shallow_frame"}
@@ -77,13 +91,11 @@ local function render_list(parent, roots, width)
       row.style.minimal_height = root and 40 or 28
       local branches = row.add{type = "flow", name = "todo_indent", direction = "horizontal"}
       branches.style.horizontal_spacing = 0
-      local icon = common.sprite(row, "show_factoriopedia", "change_recipe", task.id)
+      local icon = common.sprite(row, "edit", "change_recipe", task.id, {"todo.details"})
       icon.style = "slot_button"
       icon.style.size = root and {36, 36} or {24, 24}
-      local placeholder = row.add{type = "sprite", name = "todo_target_space", sprite = "utility/side_menu_achievements_icon"}
-      placeholder.style.size = root and {36, 36} or {24, 24}
-      placeholder.style.stretch_image_to_widget_size = true
-      row.add{type = "label", name = "todo_title", style = root and "heading_2_label" or "label"}
+      row.add{type = "label", name = "todo_title", style = root and "heading_2_label" or "label",
+        ignored_by_interaction = false, tags = common.tags("edit", task.id)}
       row.add{type = "label", name = "todo_progress", tooltip = {"todo.progress-help"}}
       common.sprite(row, "show_location", "map", task.id, locations.describe(task)).style.size = root and {28, 28} or {22, 22}
       if root then
@@ -96,7 +108,7 @@ local function render_list(parent, roots, width)
     row.todo_indent.style.width = indent
     row.todo_indent.visible = not root
     row.todo_indent.clear()
-    continuation[entry.depth] = entry.depth > 0 and last_children[task.parent_id] ~= task.id
+    continuation[entry.depth] = entry.depth > 0 and last_children[entry.parent_id] ~= task.id
     if not root then
       row.todo_indent.add{type = "empty-widget", name = "todo_spine"}.style.width = 18
       for level = math.max(1, entry.depth - 3), entry.depth do
@@ -113,16 +125,12 @@ local function render_list(parent, roots, width)
     row.todo_show_location.tooltip = locations.describe(task)
     local value = task.production
     local target = value and resolver.prototype(value.type, value.name)
-    row.todo_show_factoriopedia.visible = value ~= nil
-    row.todo_target_space.visible = value == nil
-    row.todo_target_space.sprite = task.status == "DONE" and "utility/check_mark_green" or "utility/side_menu_achievements_icon"
-    row.todo_show_factoriopedia.enabled = target ~= nil
-    row.todo_show_factoriopedia.sprite = target and value.type .. "/" .. value.name or "utility/change_recipe"
-    row.todo_show_factoriopedia.tooltip = {"", target and target.localised_name or (value and value.name or ""),
-      "\n", {"todo.open-factoriopedia"}}
+    row.todo_edit.sprite = target and value.type .. "/" .. value.name or value and "utility/change_recipe"
+      or task.status == "DONE" and "utility/check_mark_green" or "utility/side_menu_achievements_icon"
+    row.todo_edit.tooltip = {"", task.title, "\n", {"todo.details"}}
     row.todo_title.caption = task.title
     row.todo_title.tooltip = {"", task.title, "\n", {"todo.status-" .. task.status},
-      task.description ~= "" and "\n" .. task.description or ""}
+      task.description ~= "" and "\n" .. task.description or "", "\n", {"todo.details"}}
     row.todo_title.style.font_color = root and task.status == "TODO" and {r = 1, g = 0.84, b = 0.57} or colors[task.status]
     row.todo_title.style.single_line = true
     local caption = count and (count.done .. " / " .. count.total) or ""
@@ -166,7 +174,7 @@ function M.render(player)
     frame.location = common.clamp(player, prefs.panel_location or {x = 12, y = 200}, width + 36, 460)
   end
   frame.todo_panel_tree.style.width = width
-  render_list(frame.todo_panel_tree, roots, width)
+  render_list(frame.todo_panel_tree, roots, width, prefs.pinned)
 end
 
 function M.change_width(player, delta)

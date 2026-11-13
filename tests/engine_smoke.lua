@@ -118,17 +118,37 @@ local function run_checks()
   click(find(frame(), "todo_toggle_panel"))
   assert(panel() and prefs.panel_visible)
   local _, reminder_order = panel_renderer.rows(panel().todo_panel_tree)
-  assert(#reminder_order == 2, "Reminder must show children even if the management tree is collapsed")
+  assert(#reminder_order == 1 and not reminder_rows().task_2, "Unpinned children must stay out of the reminder")
+  local grandchild = assert(tasks.create("Pinned grandchild", player, game.tick, 2, false))
+  prefs.pinned[grandchild.id] = true
+  panel_renderer.render(player)
+  local nested = reminder_rows()["task_" .. grandchild.id]
+  assert(nested and nested.tags.depth == 1 and nested.parent.name == "goal_1" and not reminder_rows().task_2)
+  assert(nested.todo_indent.level_1.caption == "└", "Hidden intermediate tasks must not leave broken tree guides")
+  assert(tasks.delete(grandchild.id))
+  prefs.pinned[2] = true
+  prefs.pinned[1] = nil
+  panel_renderer.render(player)
+  assert(not reminder_rows().task_1 and reminder_rows().task_2.tags.depth == 0)
+  assert(reminder_rows().task_2.parent.name == "goal_2", "An independently pinned child must remain accessible")
+  prefs.pinned[1] = true
+  panel_renderer.render(player)
+  local _, pinned_order = panel_renderer.rows(panel().todo_panel_tree)
+  assert(#pinned_order == 2, "Explicit pins must remain visible when the management tree is collapsed")
   local reminder = panel()
   check_header(frame())
   assert(find(frame(), "todo_new").sprite == "utility/add_white")
   assert(find(frame(), "todo_toggle_panel").sprite == "utility/track_button_white")
   check_header(reminder)
   local revision = tasks.get(1).revision
-  assert(panel_renderer.rows(reminder.todo_panel_tree).task_1.todo_show_factoriopedia.sprite == "item/todo-test-goal")
-  click(panel_renderer.rows(reminder.todo_panel_tree).task_1.todo_show_factoriopedia)
+  assert(panel_renderer.rows(reminder.todo_panel_tree).task_1.todo_edit.sprite == "item/todo-test-goal")
+  click(panel_renderer.rows(reminder.todo_panel_tree).task_1.todo_edit)
   assert(panel() == reminder and tasks.get(1).revision == revision)
-  player.close_factoriopedia_gui()
+  assert(edit_frame() and pane().tags.task_id == 1)
+  click(reminder_rows().task_2.todo_title)
+  assert(pane().tags.task_id == 2, "A plain task must open from its reminder title")
+  click(reminder_rows().task_2.todo_edit)
+  assert(pane().tags.task_id == 2, "A plain task must open from its reminder icon")
   click(open_button)
   assert(frame() and not edit_frame() and not frame().todo_content)
   assert(rows().task_1 and not rows().task_2)
@@ -179,13 +199,15 @@ local function run_checks()
   assert(compact_child.todo_indent.level_1.caption == "└")
   local reminder_root_columns = column_offsets(compact_root)
   local reminder_child_columns = column_offsets(compact_child)
-  assert(reminder_child_columns.todo_show_factoriopedia > reminder_root_columns.todo_show_factoriopedia)
+  assert(reminder_child_columns.todo_edit > reminder_root_columns.todo_edit)
   assert(reminder_child_columns.todo_title == reminder_root_columns.todo_title + 30)
   for _, row in pairs(reminder_rows()) do
     for _, element in ipairs(row.children) do
       assert(element.type ~= "checkbox")
       if element.type == "sprite-button" then
-        assert(element.tags.todo_action == "show_location" or element.tags.todo_action == "show_factoriopedia")
+        assert(element.tags.todo_action == "show_location" or element.tags.todo_action == "edit")
+      elseif element.name == "todo_title" then
+        assert(element.tags.todo_action == "edit" and not element.ignored_by_interaction)
       else assert(not element.tags.todo_action) end
     end
   end
@@ -245,7 +267,7 @@ local function run_checks()
   assert(prefs.pinned[root.id] and reminder_rows()["task_" .. root.id])
   local plain_columns = column_offsets(reminder_rows()["task_" .. root.id])
   assert(plain_columns.todo_title == reminder_root_columns.todo_title)
-  assert(plain_columns.todo_target_space == reminder_root_columns.todo_show_factoriopedia)
+  assert(plain_columns.todo_edit == reminder_root_columns.todo_edit)
   runtime.command{player_index = player.index, parameter = " "}
   assert(store.get().next_id == before + 1)
   click(find(frame(), "todo_new"))
