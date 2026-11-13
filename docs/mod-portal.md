@@ -23,7 +23,8 @@ one step at a time, while you stay in charge of your factory.
 
 - Create a task with `/todo Build a new station`. Your current position and surface are saved automatically.
 - Organize goals into tasks and subtasks, with notes, priorities and statuses.
-- Pin the goals you want to follow in a compact reminder with cards, hierarchy and progress.
+- Pin individual tasks in a compact reminder with cards, hierarchy and progress. Pinning a parent does not pin its children.
+- Click a reminder title or icon to open the task, including plain notes without an associated item.
 - Preview a saved location and jump to it on the map.
 
 ![Pinned goals with subtasks and progress](https://raw.githubusercontent.com/Kardorio/todo/master/docs/images/reminder.png)

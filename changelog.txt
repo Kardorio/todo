@@ -1,4 +1,12 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.2
+Date: 2026-11-13
+  Bugfixes:
+    - The reminder now shows only explicitly pinned tasks, without including unpinned descendants.
+  Changes:
+    - Clicking a reminder title or icon opens the task editor, including tasks without a production target.
+    - Factoriopedia remains accessible from the task editor; map buttons still open saved locations.
+---------------------------------------------------------------------------------------------------
 Version: 1.0.1
 Date: 2026-11-13
   Bugfixes:

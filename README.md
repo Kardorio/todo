@@ -33,8 +33,10 @@ de la barre de raccourcis ouvre aussi un formulaire vide.
 
 ## Rappel et carte
 
-Le rappel présente les objectifs épinglés sous forme de cartes, avec leur hiérarchie
-et leur progression. Ses seules actions ouvrent la carte ou la Factopédia. Il disparaît
+Le rappel présente uniquement les tâches explicitement épinglées, sous forme de cartes,
+avec leur hiérarchie et leur progression. Épingler un parent n'épingle pas ses enfants.
+Cliquer sur le titre ou l'icône ouvre la fiche de la tâche, même sans objectif de production.
+L'icône de carte ouvre sa position ; la Factopédia reste accessible depuis l'éditeur. Il disparaît
 s'il n'y a aucune tâche épinglée. Les épingles et réglages sont propres à chaque joueur.
 
 L'éditeur propose un aperçu de la zone enregistrée : **Utiliser ma position**,
@@ -60,7 +62,7 @@ Il n'ajoute jamais automatiquement toute une chaîne de production.
 
 ## Installation depuis les sources
 
-Exécutez `./build.sh package`, puis placez `dist/todo-manager_1.0.1.zip` dans votre
+Exécutez `./build.sh package`, puis placez `dist/todo-manager_1.0.2.zip` dans votre
 dossier de mods et activez **Todo Manager**. Redémarrez Factorio après installation
 pour charger les prototypes de raccourci.
 

@@ -1,7 +1,22 @@
 local runtime = require("scripts.runtime")
 local store = require("scripts.storage")
 local editor = require("gui.task_editor")
+local tasks = require("scripts.task_manager")
+local panel = require("gui.compact_panel")
 local original = assert(script.get_event_handler("todo-manager-add-target"))
+local original_click = assert(script.get_event_handler(defines.events.on_gui_click))
+
+script.on_event(defines.events.on_gui_click, function(event)
+  original_click(event)
+  if storage.probe_phase == "reminder-input" then
+    assert(event.element.name == "todo_title", "Native click must hit the reminder title")
+    local player = game.get_player(event.player_index)
+    assert(player.gui.screen.todo_manager_editor.todo_body.todo_editor.tags.task_id == storage.probe_note_id)
+    helpers.write_file("todo-native-selected.txt", "reminder-title-click: opened plain task\n", true)
+    helpers.write_file("todo-native-done.txt", "OK", false)
+    storage.probe_phase = "done"
+  end
+end)
 
 script.on_event(defines.events.on_pre_player_crafted_item, function(event)
   storage.probe_crafted = event.recipe.name
@@ -101,8 +116,19 @@ local function tick(event)
     assert(pane.tags.production.name == "iron-plate" and pane.todo_title_row.todo_title.text ~= "iron-plate")
     game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
       path = "todo-native-right-after.png", force_render = true}
-    helpers.write_file("todo-native-done.txt", "OK", false)
-    storage.probe_phase = "done"
+    editor.close(player)
+    player.close_factoriopedia_gui()
+    player.opened = nil
+    local note = assert(tasks.create("Rappel sans objet", player, game.tick, nil, false))
+    storage.probe_note_id = note.id
+    local prefs = store.player(player.index)
+    prefs.pinned, prefs.panel_visible, prefs.panel_location = {[note.id] = true}, true, {x = 16, y = 120}
+    panel.render(player)
+    storage.probe_phase, storage.probe_capture = "reminder-capture", game.tick + 30
+  elseif storage.probe_phase == "reminder-capture" and event.tick >= storage.probe_capture then
+    game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
+      path = "todo-native-reminder-before.png", force_render = true}
+    storage.probe_phase = "reminder-input"
   end
 end
 

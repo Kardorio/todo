@@ -49,7 +49,8 @@ local function tick(event)
     local station = assert(tasks.create(english and "Build the supply station" or "Construire la gare de ravitaillement", player, game.tick))
     local note = assert(tasks.create(english and "Check splitter priorities" or "Vérifier les priorités des répartiteurs", player, game.tick, nil, false))
     local prefs = store.player(player.index)
-    prefs.pinned = {[locomotive.id] = true, [station.id] = true, [note.id] = true}
+    prefs.pinned = {[locomotive.id] = true, [engines.id] = true, [gears.id] = true,
+      [steel.id] = true, [station.id] = true, [note.id] = true}
     prefs.panel_visible = true
     prefs.panel_width = 508
     prefs.panel_location = {x = 36, y = 110}
