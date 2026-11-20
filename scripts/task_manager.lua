@@ -153,12 +153,35 @@ function M.list()
   return sorted(result)
 end
 
-function M.delete(id)
+function M.deletion_plan(id)
+  if not M.get(id) then return nil end
+  local plan = {}
+  for _, entry in ipairs(M.tree({}, {id})) do
+    plan[#plan + 1] = {id = entry.task.id, revision = entry.task.revision}
+  end
+  return plan
+end
+
+function M.delete(id, include_children, expected)
   local task = M.get(id)
   if not task then return nil, "missing" end
+  local plan = M.deletion_plan(id)
+  if expected then
+    if #plan ~= #expected then return nil, "conflict" end
+    for position, entry in ipairs(plan) do
+      if entry.id ~= expected[position].id or entry.revision ~= expected[position].revision then
+        return nil, "conflict"
+      end
+    end
+  end
+  local removed = {[id] = true}
+  if include_children then
+    for _, entry in ipairs(plan) do removed[entry.id] = true end
+  end
   local index = child_index()
   local siblings = index[task.parent_id or 0] or {}
-  local promoted = index[id] or {}
+  local promoted = not include_children and index[id] or {}
+  promoted = promoted or {}
   local result = {}
   for _, sibling in ipairs(siblings) do
     if sibling.id == id then
@@ -173,10 +196,10 @@ function M.delete(id)
     end
     sibling.parent_id, sibling.order = task.parent_id, order
   end
-  store.get().tasks[id] = nil
+  for removed_id in pairs(removed) do store.get().tasks[removed_id] = nil end
   for _, prefs in pairs(store.get().players) do
-    prefs.pinned[id], prefs.collapsed[id] = nil, nil
-    if prefs.selected_id == id then prefs.selected_id = nil end
+    for removed_id in pairs(removed) do prefs.pinned[removed_id], prefs.collapsed[removed_id] = nil, nil end
+    if removed[prefs.selected_id] then prefs.selected_id = nil end
   end
   return true
 end

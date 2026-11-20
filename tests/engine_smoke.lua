@@ -395,13 +395,46 @@ local function run_checks()
   runtime.command{player_index = player.index}
   click(rows()["task_" .. ui_task.id].todo_edit)
   click(find(pane(), "todo_delete"))
-  assert(tasks.get(ui_task.id) and pane().todo_delete_confirm.visible)
-  click(find(pane(), "todo_cancel_delete"))
-  assert(tasks.get(ui_task.id) and not pane().todo_delete_confirm.visible)
+  local confirmation = assert(player.gui.screen.todo_manager_delete)
+  assert(tasks.get(ui_task.id) and not edit_frame().visible and player.opened == confirmation)
+  assert(not confirmation.todo_delete_body.todo_keep_children, "A leaf needs no subtree choice")
+  click(find(confirmation, "todo_cancel_delete"))
+  assert(tasks.get(ui_task.id) and not player.gui.screen.todo_manager_delete and edit_frame().visible)
   click(find(pane(), "todo_delete"))
-  click(find(pane(), "todo_confirm_delete"))
+  click(find(player.gui.screen.todo_manager_delete, "todo_confirm_delete"))
   assert(not tasks.get(ui_task.id) and tasks.get(child.id))
   assert(frame() and not edit_frame())
+  local cascade = assert(tasks.create("Delete this branch", player, game.tick, nil, false))
+  local cascade_child = assert(tasks.create("Delete this child", player, game.tick, cascade.id, false))
+  local cascade_leaf = assert(tasks.create("Delete this leaf", player, game.tick, cascade_child.id, false))
+  editor.open(player, cascade.id)
+  pane().todo_description.text = "Unsaved notes survive cancellation"
+  click(find(pane(), "todo_delete"))
+  confirmation = assert(player.gui.screen.todo_manager_delete)
+  assert(confirmation.todo_delete_body.todo_keep_children.state and not confirmation.todo_delete_body.todo_delete_children.state)
+  runtime.closed{player_index = player.index, element = confirmation}
+  assert(not player.gui.screen.todo_manager_delete and edit_frame().visible and player.opened == edit_frame())
+  assert(pane().todo_description.text == "Unsaved notes survive cancellation")
+  click(find(pane(), "todo_delete"))
+  confirmation = player.gui.screen.todo_manager_delete
+  local choice = confirmation.todo_delete_body.todo_delete_children
+  choice.state = true
+  runtime.checked{player_index = player.index, element = choice}
+  assert(not confirmation.todo_delete_body.todo_keep_children.state)
+  assert(tonumber(find(confirmation, "todo_confirm_delete").caption[2]) == 3)
+  assert(tasks.update(cascade_leaf.id, {description = "Another player's change"}))
+  click(find(confirmation, "todo_confirm_delete"))
+  assert(tasks.get(cascade.id) and tasks.get(cascade_child.id) and tasks.get(cascade_leaf.id))
+  assert(confirmation.todo_delete_body.todo_delete_error.caption[1] == "todo.error-delete_conflict")
+  click(find(confirmation, "todo_cancel_delete"))
+  click(find(pane(), "todo_delete"))
+  confirmation = player.gui.screen.todo_manager_delete
+  choice = confirmation.todo_delete_body.todo_delete_children
+  choice.state = true
+  runtime.checked{player_index = player.index, element = choice}
+  click(find(confirmation, "todo_confirm_delete"))
+  assert(not tasks.get(cascade.id) and not tasks.get(cascade_child.id) and not tasks.get(cascade_leaf.id))
+  assert(not player.gui.screen.todo_manager_delete and not edit_frame() and frame())
   panel().location = {x = 42, y = 99}
   runtime.moved{player_index = player.index, element = panel()}
   assert(prefs.panel_location.x == 42 and prefs.panel_location.y == 99)
@@ -442,7 +475,7 @@ end
 script.on_nth_tick(1, function()
   if storage.todo_smoke_gui_reloaded then
     local player = game.get_player(1)
-    assert(store.get().gui_revision == 29)
+    assert(store.get().gui_revision == 30)
     assert(not player.gui.screen.todo_manager_panel, "Legacy empty pinned panel survived reload")
     assert(player.gui.screen.todo_manager_window.todo_tree, "Legacy listing layout survived reload")
     assert(not player.gui.screen.todo_manager_window.todo_content)

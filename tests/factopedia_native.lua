@@ -13,8 +13,9 @@ script.on_event(defines.events.on_gui_click, function(event)
     local player = game.get_player(event.player_index)
     assert(player.gui.screen.todo_manager_editor.todo_body.todo_editor.tags.task_id == storage.probe_note_id)
     helpers.write_file("todo-native-selected.txt", "reminder-title-click: opened plain task\n", true)
-    helpers.write_file("todo-native-done.txt", "OK", false)
-    storage.probe_phase = "done"
+    player.gui.screen.todo_manager_editor.todo_body.todo_editor.todo_description.text = "Native unsaved draft"
+    editor.request_delete(player, true)
+    storage.probe_phase, storage.probe_capture = "delete-capture", game.tick + 30
   end
 end)
 
@@ -129,6 +130,19 @@ local function tick(event)
     game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
       path = "todo-native-reminder-before.png", force_render = true}
     storage.probe_phase = "reminder-input"
+  elseif storage.probe_phase == "delete-capture" and event.tick >= storage.probe_capture then
+    assert(player.gui.screen.todo_manager_delete and not player.gui.screen.todo_manager_editor.visible)
+    game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
+      path = "todo-native-delete-before.png", force_render = true}
+    storage.probe_phase = "delete-input"
+  elseif storage.probe_phase == "delete-input" and not player.gui.screen.todo_manager_delete then
+    local frame = assert(player.gui.screen.todo_manager_editor)
+    assert(frame.visible and player.opened == frame)
+    assert(frame.todo_body.todo_editor.todo_description.text == "Native unsaved draft")
+    assert(tasks.get(storage.probe_note_id))
+    helpers.write_file("todo-native-selected.txt", "delete-escape: restored unsaved draft\n", true)
+    helpers.write_file("todo-native-done.txt", "OK", false)
+    storage.probe_phase = "done"
   end
 end
 

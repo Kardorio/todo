@@ -26,6 +26,7 @@ one step at a time, while you stay in charge of your factory.
 - Pin individual tasks in a compact reminder with cards, hierarchy and progress. Pinning a parent does not pin its children.
 - Click a reminder title or icon to open the task, including plain notes without an associated item.
 - Preview a saved location and jump to it on the map.
+- When deleting a task, choose whether to keep its subtasks or remove the entire branch.
 
 ![Pinned goals with subtasks and progress](https://raw.githubusercontent.com/Kardorio/todo/master/docs/images/reminder.png)
 

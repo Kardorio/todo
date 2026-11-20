@@ -22,6 +22,8 @@ local function refresh_preview(player)
 end
 
 function M.close(player)
+  local confirmation = player.gui.screen.todo_manager_delete
+  if confirmation then confirmation.destroy() end
   local frame = player.gui.screen.todo_manager_editor
   if frame then frame.destroy() end
 end
@@ -46,6 +48,8 @@ local function field(parent, caption, spec)
 end
 
 function M.open(player, id, parent_id)
+  local confirmation = player.gui.screen.todo_manager_delete
+  if confirmation then confirmation.destroy() end
   local frame = player.gui.screen.todo_manager_editor
   if not frame then
     frame = player.gui.screen.add{type = "frame", name = "todo_manager_editor", direction = "vertical"}
@@ -112,13 +116,6 @@ function M.open(player, id, parent_id)
   save.style.width = 170
   common.button(actions, "reload_editor", {"todo.reload"}, nil, {"todo.reload-help"}).style.width = 90
   if task then common.sprite(actions, "delete", "trash", task.id, {"todo.delete-help"}) end
-  local confirm = pane.add{type = "flow", name = "todo_delete_confirm", direction = "vertical"}
-  confirm.visible = false
-  local warning = confirm.add{type = "label", caption = {"todo.delete-confirm"}}
-  warning.style.single_line = false
-  warning.style.maximal_width = 310
-  common.button(confirm, "confirm_delete", {"todo.delete"})
-  common.button(confirm, "cancel_delete", {"todo.cancel"})
   local error_label = pane.add{type = "label", name = "todo_error", caption = ""}
   error_label.style.font_color = {r = 1, g = 0.35, b = 0.25}
   error_label.style.single_line = false
@@ -129,6 +126,8 @@ function M.open(player, id, parent_id)
 end
 
 function M.error(player, code)
+  local confirmation = player.gui.screen.todo_manager_delete
+  if confirmation then confirmation.todo_delete_body.todo_delete_error.caption = {"todo.error-" .. code} return end
   local pane = holder(player)
   if pane then pane.todo_error.caption = {"todo.error-" .. code} end
 end
@@ -142,18 +141,77 @@ function M.refresh_location(player)
 end
 
 function M.request_delete(player, visible)
+  local confirmation = player.gui.screen.todo_manager_delete
+  if confirmation then confirmation.destroy() end
   local pane = holder(player)
-  if pane then pane.todo_delete_confirm.visible = visible end
+  if not pane then return end
+  local frame = player.gui.screen.todo_manager_editor
+  if not visible then frame.visible = true player.opened = frame return end
+  local task = tasks.get(pane.tags.task_id)
+  if not task then M.error(player, "missing") return end
+  if task.revision ~= pane.tags.revision then M.error(player, "conflict") return end
+  local plan = tasks.deletion_plan(task.id)
+  local count = #plan - 1
+  confirmation = player.gui.screen.add{type = "frame", name = "todo_manager_delete", direction = "vertical",
+    tags = {task_id = task.id, plan = plan}}
+  local header = common.header(confirmation, {"todo.delete-title"})
+  common.sprite(header, "cancel_delete", "close", nil, {"todo.cancel"})
+  local body = confirmation.add{type = "frame", name = "todo_delete_body", direction = "vertical", style = "inside_shallow_frame"}
+  body.style.padding = 16
+  body.style.width = 400
+  local title = body.add{type = "label", caption = task.title, style = "heading_2_label"}
+  title.style.single_line = false
+  title.style.maximal_width = 366
+  local warning = body.add{type = "label", caption = {"todo.delete-warning"}}
+  warning.style.single_line = false
+  warning.style.maximal_width = 366
+  if count > 0 then
+    body.add{type = "radiobutton", name = "todo_keep_children", state = true,
+      caption = {"todo.delete-keep-children", count}, tags = {todo_action = "delete_mode"}}
+    local help = body.add{type = "label", caption = {"todo.delete-keep-help"}}
+    help.style.single_line = false
+    help.style.maximal_width = 350
+    help.style.font_color = {r = 0.7, g = 0.7, b = 0.7}
+    body.add{type = "radiobutton", name = "todo_delete_children", state = false,
+      caption = {"todo.delete-with-children", count}, tags = {todo_action = "delete_mode"}}
+  end
+  local error_label = body.add{type = "label", name = "todo_delete_error", caption = ""}
+  error_label.style.single_line = false
+  error_label.style.maximal_width = 366
+  error_label.style.font_color = {r = 1, g = 0.35, b = 0.25}
+  for _, element in ipairs(body.children) do element.style.bottom_margin = 10 end
+  local actions = confirmation.add{type = "flow", direction = "horizontal"}
+  common.button(actions, "cancel_delete", {"todo.cancel"}).style = "back_button"
+  actions.add{type = "empty-widget"}.style.horizontally_stretchable = true
+  local remove = common.button(actions, "confirm_delete", {"todo.delete-single"})
+  remove.style = "red_confirm_button"
+  remove.style.minimal_width = 190
+  confirmation.auto_center = true
+  frame.visible = false
+  player.opened = confirmation
+end
+
+function M.delete_mode(player, element)
+  local confirmation = player.gui.screen.todo_manager_delete
+  if not confirmation then return end
+  local body = confirmation.todo_delete_body
+  local include_children = element.name == "todo_delete_children"
+  body.todo_keep_children.state = not include_children
+  body.todo_delete_children.state = include_children
+  local actions = confirmation.children[3]
+  actions.todo_confirm_delete.caption = include_children and {"todo.delete-count", #confirmation.tags.plan} or {"todo.delete-single"}
 end
 
 function M.delete(player)
   local pane = holder(player)
-  if not pane then return end
+  local confirmation = player.gui.screen.todo_manager_delete
+  if not pane or not confirmation then return end
   local task = tasks.get(pane.tags.task_id)
   if not task then M.error(player, "missing") return end
   if task.revision ~= pane.tags.revision then M.error(player, "conflict") return end
-  local ok, err = tasks.delete(task.id)
-  if not ok then M.error(player, err) return end
+  local include_children = confirmation.todo_delete_body.todo_delete_children
+  local ok, err = tasks.delete(task.id, include_children and include_children.state, confirmation.tags.plan)
+  if not ok then M.error(player, err == "conflict" and "delete_conflict" or err) return end
   return true
 end
 

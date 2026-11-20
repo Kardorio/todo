@@ -5,6 +5,7 @@ local window = require("gui.main_window")
 local editor = require("gui.task_editor")
 local production_fields = require("gui.production_fields")
 local panel_renderer = require("gui.compact_panel")
+local settings = require("gui.settings_window")
 local english = require("visual_language") == "en"
 
 script.on_init(function()
@@ -166,6 +167,18 @@ local function tick(event)
     assert(player.gui.screen.todo_manager_settings)
     game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
       path = "todo-settings.png", force_render = true}
+    settings.close(player)
+    editor.open(player, storage.todo_visual_task)
+    editor.request_delete(player, true)
+    local choice = player.gui.screen.todo_manager_delete.todo_delete_body.todo_delete_children
+    choice.state = true
+    runtime.checked{player_index = player.index, element = choice}
+    storage.todo_visual_phase = 19
+    storage.todo_visual_next_tick = event.tick + 30
+  elseif storage.todo_visual_phase == 19 and event.tick >= storage.todo_visual_next_tick then
+    assert(player.gui.screen.todo_manager_delete)
+    game.take_screenshot{player = player, resolution = {1280, 900}, show_gui = true,
+      path = "todo-delete-confirm.png", force_render = true}
     helpers.write_file("todo-visual-result.txt", "TODO VISUAL OK\n", false)
     storage.todo_visual_phase = nil
   end
