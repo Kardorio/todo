@@ -112,6 +112,29 @@ return function(player)
   assert(tasks.delete(chain_root.id))
   assert(first_deep_child.parent_id == nil)
   assert(tasks.tree({}, {tip.id})[1].task.id == tip.id)
+  local branch = assert(tasks.create("Whole branch", player, game.tick, parent.id, false))
+  local nested = assert(tasks.create("Nested", player, game.tick, branch.id, false))
+  local leaf = assert(tasks.create("Leaf", player, game.tick, nested.id, false))
+  local snapshot = tasks.deletion_plan(branch.id)
+  assert(#snapshot == 3)
+  assert(tasks.update(leaf.id, {title = "Changed"}))
+  invalid, reason = tasks.delete(branch.id, true, snapshot)
+  assert(not invalid and reason == "conflict" and tasks.get(branch.id) and tasks.get(nested.id) and tasks.get(leaf.id))
+  snapshot = tasks.deletion_plan(branch.id)
+  local added = assert(tasks.create("Added while confirming", player, game.tick, branch.id, false))
+  invalid, reason = tasks.delete(branch.id, true, snapshot)
+  assert(not invalid and reason == "conflict" and tasks.get(added.id))
+  for _, preferences in ipairs({prefs, other_prefs}) do
+    preferences.pinned[leaf.id], preferences.collapsed[nested.id], preferences.selected_id = true, true, leaf.id
+  end
+  assert(tasks.delete(branch.id, true, tasks.deletion_plan(branch.id)))
+  assert(not tasks.get(branch.id) and not tasks.get(nested.id) and not tasks.get(leaf.id) and not tasks.get(added.id))
+  assert(tasks.get(parent.id) and tasks.get(grandchild.id))
+  for _, preferences in ipairs({prefs, other_prefs}) do
+    assert(not preferences.pinned[leaf.id] and not preferences.collapsed[nested.id] and not preferences.selected_id)
+  end
+  assert(tasks.delete(first_deep_child.id, true))
+  assert(not tasks.get(first_deep_child.id) and not tasks.get(tip.id))
   storage.todo_manager = original
   log("TODO_MODEL_OK")
 end

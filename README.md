@@ -53,7 +53,10 @@ sont migrées au chargement.
 
 Les statuts sont **À faire**, **En cours**, **Terminé** et **Ignoré**. La progression
 compte les enfants directs, hors ignorés, sans terminer automatiquement le parent.
-La suppression demande confirmation et conserve les enfants en les remontant d'un niveau.
+La suppression ouvre une fenêtre dédiée : conserver les sous-tâches en remontant les
+enfants directs d'un niveau, ou supprimer toute la branche. Le bouton indique le nombre
+de tâches concernées. Annuler revient au brouillon intact. Une modification de la branche
+pendant la confirmation bloque la suppression et invite à la rouvrir.
 L'ordre est stable, sans tri manuel. La profondeur du modèle n'est pas limitée.
 
 Les recettes sont lues dans les prototypes du jeu et des mods. Les quantités affichées
@@ -62,7 +65,7 @@ Il n'ajoute jamais automatiquement toute une chaîne de production.
 
 ## Installation depuis les sources
 
-Exécutez `./build.sh package`, puis placez `dist/todo-manager_1.0.2.zip` dans votre
+Exécutez `./build.sh package`, puis placez `dist/todo-manager_1.0.3.zip` dans votre
 dossier de mods et activez **Todo Manager**. Redémarrez Factorio après installation
 pour charger les prototypes de raccourci.
 

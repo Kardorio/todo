@@ -113,6 +113,13 @@ with tempfile.TemporaryDirectory(prefix="todo-native-input-") as directory:
         shutil.copy2(scripts / "todo-native-reminder-before.png", output / "todo-native-reminder-before.png")
         subprocess.run(["xdotool", "mousemove", "--window", window, "200", "210", "click", "1"], env=env, check=True)
         deadline = time.monotonic() + 20
+        while time.monotonic() < deadline and not complete_png(scripts / "todo-native-delete-before.png"):
+            assert process.poll() is None, (work / "game.log").read_text()[-7000:]
+            time.sleep(0.2)
+        assert complete_png(scripts / "todo-native-delete-before.png"), (work / "game.log").read_text()[-7000:]
+        shutil.copy2(scripts / "todo-native-delete-before.png", output / "todo-native-delete-before.png")
+        subprocess.run(["xdotool", "key", "Escape"], env=env, check=True)
+        deadline = time.monotonic() + 20
         while time.monotonic() < deadline and not ((scripts / "todo-native-done.txt").exists()
                                                  and complete_png(scripts / "todo-native-after.png")
                                                  and complete_png(scripts / "todo-native-right-after.png")):

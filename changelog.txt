@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 1.0.3
+Date: 2026-11-20
+  Features:
+    - Added a dedicated deletion dialog with a choice to keep subtasks or delete the entire branch.
+    - The confirmation button displays the total number of tasks to be deleted.
+---------------------------------------------------------------------------------------------------
 Version: 1.0.2
 Date: 2026-11-13
   Bugfixes:

@@ -9,7 +9,7 @@ local factopedia = require("integrations.factopedia")
 local titles = require("scripts.task_titles")
 local settings = require("gui.settings_window")
 local M = {}
-local gui_revision = 29
+local gui_revision = 30
 
 local function open_list(player)
   settings.close(player)
@@ -197,6 +197,7 @@ end
 function M.checked(event)
   local player, element, tags = event_context(event)
   if not player then return end
+  if tags.todo_action == "delete_mode" then editor.delete_mode(player, element) return end
   if tags.todo_action == "settings_panel_visible" then settings.changed(player, element) return end
   if tags.todo_action ~= "done" then return end
   local task = tasks.get(tags.task_id)
@@ -214,7 +215,10 @@ function M.closed(event)
     if player then window.close(player) end
   elseif editor.is_window(event.element) then
     local player = game.get_player(event.player_index)
-    if player then open_list(player) end
+    if player and not player.gui.screen.todo_manager_delete then open_list(player) end
+  elseif event.element and event.element.valid and event.element.name == "todo_manager_delete" then
+    local player = game.get_player(event.player_index)
+    if player then editor.request_delete(player, false) end
   elseif event.element and event.element.valid and event.element.name == "todo_manager_settings" then
     local player = game.get_player(event.player_index)
     if player then open_list(player) end
