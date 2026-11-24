@@ -57,7 +57,9 @@ La suppression ouvre une fenêtre dédiée : conserver les sous-tâches en remon
 enfants directs d'un niveau, ou supprimer toute la branche. Le bouton indique le nombre
 de tâches concernées. Annuler revient au brouillon intact. Une modification de la branche
 pendant la confirmation bloque la suppression et invite à la rouvrir.
-L'ordre est stable, sans tri manuel. La profondeur du modèle n'est pas limitée.
+L'ordre est stable. Dans la liste, le bouton de déplacement d'une tâche la saisit ;
+un clic sur une tâche de même niveau la dépose à sa place, et un second clic sur le
+bouton annule. La profondeur du modèle n'est pas limitée.
 
 Les recettes sont lues dans les prototypes du jeu et des mods. Les quantités affichées
 sont théoriques ; le mod ne simule ni machines, ni productivité, ni équilibrage des coproduits.

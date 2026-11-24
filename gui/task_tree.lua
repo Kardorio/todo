@@ -21,6 +21,30 @@ function M.rows(parent)
   return result
 end
 
+local function moving_state(prefs)
+  local moving = prefs.moving_id and tasks.get(prefs.moving_id)
+  local positions = {}
+  if moving then
+    for position, sibling in ipairs(tasks.children(moving.parent_id)) do positions[sibling.id] = position end
+  end
+  return moving, positions
+end
+
+local function refresh_move(row, task, moving, positions)
+  local button, title = row.todo_move, row.todo_edit
+  local target = moving and moving.id ~= task.id and positions[task.id]
+  local action = target and "drop" or (moving and moving.id == task.id and "move") or "edit"
+  title.tags = common.tags(action, task.id)
+  title.enabled = not moving or positions[task.id] ~= nil
+  button.tags = common.tags(target and "drop" or "move", task.id)
+  button.enabled = not moving or positions[task.id] ~= nil
+  button.toggled = moving and moving.id == task.id or false
+  local above = target and target < positions[moving.id]
+  button.sprite = "utility/" .. (not target and "reassign" or above and "hint_arrow_up" or "hint_arrow_down")
+  button.tooltip = {not target and (moving and "todo.move-cancel" or "todo.move-help")
+    or above and "todo.move-above" or "todo.move-below"}
+end
+
 function M.render(parent, player, compact)
   local prefs = store.player(player.index)
   local roots
@@ -31,6 +55,7 @@ function M.render(parent, player, compact)
     end
   end
   local entries = tasks.tree(prefs.collapsed, roots)
+  local moving, positions = moving_state(prefs)
   local groups, group = {}, nil
   for _, entry in ipairs(entries) do
     if entry.depth == 0 then
@@ -42,7 +67,7 @@ function M.render(parent, player, compact)
   end
   local children = parent.children
   local rows = {}
-  local rebuild = parent.tags.todo_tree_layout ~= 8
+  local rebuild = parent.tags.todo_tree_layout ~= 9
     or (#groups > 0 and #children ~= #groups)
     or (#groups == 0 and (#children ~= 1 or children[1].name ~= "todo_empty"))
   if not rebuild then
@@ -61,7 +86,7 @@ function M.render(parent, player, compact)
   end
   if rebuild then
     parent.clear()
-    parent.tags = {todo_tree_layout = 8}
+    parent.tags = {todo_tree_layout = 9}
     rows = {}
     for _, current in ipairs(groups) do
       local block = parent.add{type = "frame", name = "branch_" .. current.id,
@@ -98,7 +123,7 @@ function M.render(parent, player, compact)
     locations_visible = locations_visible or (entry.task.position ~= nil and entry.task.surface_index ~= nil)
     production_visible = production_visible or entry.task.production ~= nil
   end
-  local fixed_width = (compact and 90 or 122)
+  local fixed_width = (compact and 90 or 154)
     + (progress_width > 0 and progress_width + 4 or 0)
     + (priority_width > 0 and priority_width + 4 or 0)
     + (locations_visible and 32 or 0) + (production_visible and 32 or 0)
@@ -111,6 +136,7 @@ function M.render(parent, player, compact)
       row = entry.group.frame.add{type = "flow", direction = "horizontal", name = "task_" .. task.id,
         tags = {depth = entry.depth}}
       row.style.vertical_align = "center"
+      if not compact then common.sprite(row, "move", "reassign", task.id) end
       row.add{type = "empty-widget", name = "todo_indent"}
       common.sprite(row, "collapse", "collapse", task.id, {"todo.toggle-branch"})
       local branch_space = row.add{type = "empty-widget", name = "todo_branch_space"}
@@ -172,6 +198,7 @@ function M.render(parent, player, compact)
     end
     row.todo_pin.tooltip = {prefs.pinned[task.id] and "todo.unpin" or "todo.pin"}
     row.todo_pin.toggled = prefs.pinned[task.id] == true
+    if not compact then refresh_move(row, task, moving, positions) end
   end
   local selected = prefs.selected_id and rows["task_" .. prefs.selected_id]
   if rebuild and selected then parent.scroll_to_element(selected) end

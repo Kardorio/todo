@@ -9,7 +9,7 @@ local factopedia = require("integrations.factopedia")
 local titles = require("scripts.task_titles")
 local settings = require("gui.settings_window")
 local M = {}
-local gui_revision = 30
+local gui_revision = 31
 
 local function open_list(player)
   settings.close(player)
@@ -38,7 +38,7 @@ function M.initialize()
   store.initialize().gui_revision = gui_revision
   for _, player in pairs(game.players) do
     local prefs = store.player(player.index)
-    prefs.pending_hover, prefs.native_crafts = nil, nil
+    prefs.pending_hover, prefs.native_crafts, prefs.moving_id = nil, nil, nil
     window.ensure_button(player)
     local old = player.gui.screen.todo_manager_window
     if old then
@@ -134,6 +134,21 @@ function M.shortcut(event)
   if player then open_hover_target(player) end
 end
 
+local function toggle_move(player, id)
+  local prefs = store.player(player.index)
+  prefs.moving_id = prefs.moving_id ~= id and tasks.get(id) and id or nil
+  render(player)
+end
+
+local function drop(player, target_id)
+  local prefs = store.player(player.index)
+  local moving_id = prefs.moving_id
+  prefs.moving_id = nil
+  local _, err = tasks.move(moving_id, target_id)
+  if err then player.print({"todo.error-invalid_move"}) end
+  M.refresh()
+end
+
 local function event_context(event)
   M.ensure_ready()
   local element = event.element
@@ -170,6 +185,8 @@ function M.clicked(event)
       prefs.pinned[id] = not prefs.pinned[id] or nil
       render(player)
     end
+  elseif action == "move" then toggle_move(player, id)
+  elseif action == "drop" then drop(player, id)
   elseif action == "save" then
     if editor.save(player) then open_list(player) M.refresh() end
   elseif action == "reload_editor" then editor.reload(player)
