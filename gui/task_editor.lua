@@ -80,14 +80,14 @@ function M.open(player, id, parent_id)
   pane.add{type = "label", caption = {"todo.field-title"}, style = "heading_2_label"}
   local title_row = pane.add{type = "flow", name = "todo_title_row", direction = "horizontal"}
   local title = title_row.add{type = "textfield", name = "todo_title", text = task and task.title or "",
-    tags = {todo_action = "production_title"}}
+    icon_selector = true, tags = {todo_action = "production_title"}}
   title.style.width = 250
   title_row.style.vertical_align = "center"
   title_row.add{type = "choose-elem-button", name = "todo_choose_target", elem_type = "signal",
     tooltip = {"todo.target-choose-help"}, tags = {todo_action = "production_target"}}
   production_fields.render(pane, task and task.production or false, player)
   local description = field(pane, "todo.description", {type = "text-box", name = "todo_description",
-    text = task and task.description or ""})
+    text = task and task.description or "", icon_selector = true})
   description.word_wrap = true
   description.style.width = 300
   description.style.height = 80
