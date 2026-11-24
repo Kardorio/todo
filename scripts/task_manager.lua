@@ -33,6 +33,15 @@ local function finite(value)
   return type(value) == "number" and value == value and value ~= math.huge and value ~= -math.huge
 end
 
+local function renumber(siblings, parent_id)
+  for order, sibling in ipairs(siblings) do
+    if sibling.parent_id ~= parent_id or sibling.order ~= order then
+      sibling.revision = sibling.revision + 1
+    end
+    sibling.parent_id, sibling.order = parent_id, order
+  end
+end
+
 local function next_order(parent_id)
   local maximum = 0
   for _, task in pairs(store.get().tasks) do
@@ -190,18 +199,29 @@ function M.delete(id, include_children, expected)
       result[#result + 1] = sibling
     end
   end
-  for order, sibling in ipairs(result) do
-    if sibling.parent_id ~= task.parent_id or sibling.order ~= order then
-      sibling.revision = sibling.revision + 1
-    end
-    sibling.parent_id, sibling.order = task.parent_id, order
-  end
+  renumber(result, task.parent_id)
   for removed_id in pairs(removed) do store.get().tasks[removed_id] = nil end
   for _, prefs in pairs(store.get().players) do
     for removed_id in pairs(removed) do prefs.pinned[removed_id], prefs.collapsed[removed_id] = nil, nil end
     if removed[prefs.selected_id] then prefs.selected_id = nil end
   end
   return true
+end
+
+function M.move(id, target_id)
+  local task, target = M.get(id), M.get(target_id)
+  if not task or not target then return nil, "missing" end
+  if task.parent_id ~= target.parent_id then return nil, "invalid_move" end
+  local siblings = M.children(task.parent_id)
+  local from, to
+  for position, sibling in ipairs(siblings) do
+    if sibling.id == id then from = position end
+    if sibling.id == target_id then to = position end
+  end
+  table.remove(siblings, from)
+  table.insert(siblings, to, task)
+  renumber(siblings, task.parent_id)
+  return task
 end
 
 function M.tree(collapsed, root_ids)

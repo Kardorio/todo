@@ -1,5 +1,6 @@
 local common = require("gui.common")
 local tree = require("gui.task_tree")
+local store = require("scripts.storage")
 local mod_gui = require("mod-gui")
 local M = {}
 local window_name = "todo_manager_window"
@@ -31,6 +32,7 @@ end
 function M.close(player)
   local frame = player.gui.screen[window_name]
   if frame then frame.destroy() end
+  store.player(player.index).moving_id = nil
 end
 
 function M.render(player)
