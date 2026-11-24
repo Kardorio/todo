@@ -272,19 +272,20 @@ local function run_checks()
   assert(store.get().next_id == before + 1)
   click(find(frame(), "todo_new"))
   assert(not frame() and edit_frame() and pane().todo_title_row.todo_title)
+  assert(pane().todo_title_row.todo_title.icon_selector and pane().todo_description.icon_selector)
   check_header(edit_frame())
   click(find(pane(), "todo_save"))
   assert(not frame() and edit_frame())
   assert(store.get().next_id == before + 1)
   assert(pane().todo_error.caption[1] == "todo.error-title_required")
   pane().todo_title_row.todo_title.text = "Créée dans la fenêtre"
-  pane().todo_description.text = "Prévoir une gare"
+  pane().todo_description.text = "Prévoir une gare [item=iron-chest]"
   pane().todo_options.todo_status.selected_index = 2
   pane().todo_options.todo_priority.selected_index = 4
   click(find(pane(), "todo_save"))
   assert(frame() and not edit_frame())
   local ui_task = assert(tasks.get(before + 1))
-  assert(ui_task.description == "Prévoir une gare" and ui_task.status == "IN_PROGRESS")
+  assert(ui_task.description == "Prévoir une gare [item=iron-chest]" and ui_task.status == "IN_PROGRESS")
   assert(ui_task.priority == 3 and not ui_task.position)
   click(rows()["task_" .. ui_task.id].todo_new_child)
   pane().todo_title_row.todo_title.text = "Enfant"
